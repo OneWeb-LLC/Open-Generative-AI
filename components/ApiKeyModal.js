@@ -1,17 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getCommonCopy } from '@/lib/locales';
+import ApiProviderSelect from './ApiProviderSelect';
 
-export default function ApiKeyModal({ onSave, onClose, overlay = false, title, subtitle, locale = 'en' }) {
+export default function ApiKeyModal({
+  onSave,
+  onClose,
+  overlay = false,
+  title,
+  subtitle,
+  locale = 'en',
+  apiProviders = [],
+  defaultProviderId = 'muapi-proxy',
+}) {
+  const [providerId, setProviderId] = useState(defaultProviderId);
   const [key, setKey] = useState('');
   const [error, setError] = useState('');
   const copy = getCommonCopy(locale).apiKeyModal;
+
+  const activeProvider = useMemo(
+    () => apiProviders.find((p) => p.id === providerId) ?? apiProviders[0],
+    [apiProviders, providerId],
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const trimmed = key.trim();
     if (!trimmed) { setError(copy.missingKeyError); return; }
+    if (apiProviders.length > 0 && activeProvider?.id) {
+      onSave({ apiKey: trimmed, providerId: activeProvider.id });
+      return;
+    }
     onSave(trimmed);
   };
 
@@ -51,6 +71,13 @@ export default function ApiKeyModal({ onSave, onClose, overlay = false, title, s
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {apiProviders.length > 0 && (
+            <ApiProviderSelect
+              providers={apiProviders}
+              value={providerId}
+              onChange={setProviderId}
+            />
+          )}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-white/30 ml-1">
               {copy.label}

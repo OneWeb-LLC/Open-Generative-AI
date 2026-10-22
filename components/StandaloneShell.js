@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ImageStudio, VideoStudio, ClippingStudio, MotionControlStudio, VibeMotionStudio, LipSyncStudio, RecastStudio, CinemaStudio, AudioStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, AiInfluencerStudio, LayersStudio, getUserBalance } from 'studio';
@@ -11,7 +11,16 @@ const DesignAgentStudio = dynamic(() => import('studio').then(mod => mod.DesignA
 });
 import axios from 'axios';
 import ApiKeyModal from './ApiKeyModal';
+import ApiProviderSelect from './ApiProviderSelect';
 import { getCommonCopy, getLocaleConfig, localizeStudioPath } from '@/lib/locales';
+import { createClient } from '@/lib/supabase/client';
+import { muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
+import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
+import {
+  loadClientSecret,
+  removeClientSecret,
+  saveClientSecret,
+} from '@/lib/ogi/client-secret-storage';
 
 // Tab/category ids, icons, and English `label` fallbacks are stable
 // identifiers, not locale copy — the actual rendered label is resolved
@@ -297,7 +306,15 @@ const persistNotifications = (notifications) => {
   }
 };
 
-export default function StandaloneShell({ locale = 'en' }) {
+export default function StandaloneShell({
+  locale = 'en',
+  userId = null,
+  userEmail = null,
+  oneId = null,
+  workspaceId = null,
+  apiProviders = [],
+  defaultProviderId = 'muapi-proxy',
+}) {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug || [];
@@ -314,6 +331,23 @@ export default function StandaloneShell({ locale = 'en' }) {
     [copy],
   );
   const studioPath = useCallback((tabId) => localizeStudioPath(locale, tabId), [locale]);
+
+  const storageKey = userId ? muapiStorageKey(userId) : STORAGE_KEY;
+  const providerStorageKey = apiProviderStorageKey(userId);
+  const providerById = useMemo(() => {
+    const map = new Map();
+    for (const p of apiProviders) map.set(p.id, p);
+    return map;
+  }, [apiProviders]);
+  const [providerId, setProviderId] = useState(defaultProviderId);
+
+  const syncClientForProvider = useCallback(
+    (id) => {
+      const provider = providerById.get(id);
+      if (provider) applyGenerativeProvider(provider);
+    },
+    [providerById],
+  );
 
   // Helper to extract workflow details precisely from either route structure
   const getWorkflowInfo = useCallback(() => {
@@ -576,28 +610,88 @@ export default function StandaloneShell({ locale = 'en' }) {
 
   useEffect(() => {
     setHasMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setApiKey(stored);
-      fetchBalance(stored);
-      // Sync cookie immediately on mount to establish identity for background requests
-      document.cookie = `muapi_key=${stored}; path=/; max-age=31536000; SameSite=Lax`;
-    }
-  }, [fetchBalance]);
+    void (async () => {
+      const storedProvider =
+        localStorage.getItem(providerStorageKey) ||
+        defaultProviderId ||
+        apiProviders[0]?.id;
+      if (storedProvider) setProviderId(storedProvider);
 
-  const handleKeySave = useCallback((key) => {
-    localStorage.setItem(STORAGE_KEY, key);
-    setApiKey(key);
-    fetchBalance(key);
-    document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
-  }, [fetchBalance]);
+      const stored = await loadClientSecret(storageKey);
+      const legacy = !stored && !userId ? localStorage.getItem(STORAGE_KEY) : null;
+      const key = stored || legacy;
+      if (key) {
+        setApiKey(key);
+        fetchBalance(key);
+        document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+        if (legacy && userId) {
+          await saveClientSecret(storageKey, legacy);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+    })();
+  }, [fetchBalance, storageKey, providerStorageKey, defaultProviderId, apiProviders, userId]);
+
+  useEffect(() => {
+    if (!providerId) return;
+    syncClientForProvider(providerId);
+  }, [providerId, syncClientForProvider]);
+
+  useEffect(() => {
+    if (!userId) return;
+    const syncKey = 'ogi_workspace_cookie_sync';
+    if (sessionStorage.getItem(syncKey)) return;
+
+    void fetch('/api/auth/complete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        activation_kind: 'sign_in',
+        ...(workspaceId ? { workspace_id: workspaceId } : {}),
+      }),
+    }).then((res) => {
+      if (res.ok) sessionStorage.setItem(syncKey, '1');
+    });
+  }, [userId, workspaceId]);
+
+  const handleKeySave = useCallback(
+    (payload) => {
+      const key = typeof payload === 'string' ? payload : payload?.apiKey;
+      const nextProviderId =
+        typeof payload === 'object' && payload?.providerId ? payload.providerId : providerId;
+      if (!key) return;
+      void saveClientSecret(storageKey, key);
+      if (nextProviderId) {
+        localStorage.setItem(providerStorageKey, nextProviderId);
+        setProviderId(nextProviderId);
+        syncClientForProvider(nextProviderId);
+      }
+      setApiKey(key);
+      fetchBalance(key);
+      document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+    },
+    [fetchBalance, storageKey, providerId, providerStorageKey, syncClientForProvider],
+  );
 
   const handleKeyChange = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    void removeClientSecret(storageKey);
+    if (!userId) localStorage.removeItem(STORAGE_KEY);
     setApiKey(null);
     setBalance(null);
-    document.cookie = "muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  }, []);
+    document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  }, [storageKey, userId]);
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      sessionStorage.removeItem('ogi_workspace_cookie_sync');
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+    router.push('/login');
+    router.refresh();
+  }, [router]);
 
   // Inject API key into all outgoing Axios requests (prop-based approach)
   // We use an interceptor to be selective and NOT send the key to external domains like S3
@@ -676,7 +770,14 @@ export default function StandaloneShell({ locale = 'en' }) {
   );
 
   if (!apiKey) {
-    return <ApiKeyModal onSave={handleKeySave} locale={locale} />;
+    return (
+      <ApiKeyModal
+        onSave={handleKeySave}
+        locale={locale}
+        apiProviders={apiProviders}
+        defaultProviderId={providerId || defaultProviderId}
+      />
+    );
   }
 
   return (
@@ -1181,7 +1282,25 @@ export default function StandaloneShell({ locale = 'en' }) {
               {copy.settingsModal.subtitle}
             </p>
 
+            {(oneId || userEmail) && (
+              <p className="text-[11px] text-white/40 font-mono mb-4 truncate">
+                {oneId || userEmail}
+                {workspaceId ? ` · ws ${workspaceId.slice(0, 8)}…` : null}
+              </p>
+            )}
+
             <div className="space-y-4 mb-8">
+              {apiProviders.length > 0 && (
+                <ApiProviderSelect
+                  providers={apiProviders}
+                  value={providerId}
+                  onChange={(nextId) => {
+                    localStorage.setItem(providerStorageKey, nextId);
+                    setProviderId(nextId);
+                    syncClientForProvider(nextId);
+                  }}
+                />
+              )}
               <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
                 <label className="block text-xs font-bold text-white/30 mb-2">
                    {copy.settingsModal.activeApiKey}
@@ -1199,6 +1318,15 @@ export default function StandaloneShell({ locale = 'en' }) {
               >
                 {copy.settingsModal.changeKey}
               </button>
+              {userId && (
+                <button
+                  type="button"
+                  onClick={() => void handleSignOut()}
+                  className="flex-1 h-10 rounded-md bg-white/5 text-white/70 hover:bg-white/10 text-xs font-semibold transition-all"
+                >
+                  Sign out
+                </button>
+              )}
               <button
                 onClick={() => setShowSettings(false)}
                 className="flex-1 h-10 rounded-md bg-white/5 text-white/80 hover:bg-white/10 text-xs font-semibold transition-all border border-white/5"

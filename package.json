@@ -21,6 +21,9 @@
     "build:agent": "npm run build -w ai-agent",
     "build:design": "npm run build -w design-agent",
     "build:packages": "npm run build:workflow && npm run build:agent && npm run build:design && npm run build:studio",
+    "test": "node --test tests/*.test.mjs",
+    "smoke:satellite": "node scripts/smoke-satellite.mjs",
+    "sync:vercel-env": "node scripts/sync-vercel-env-from-oweb.mjs",
     "setup": "git submodule update --init --recursive && npm install && npm run build:packages",
     "vite:dev": "vite",
     "vite:build": "vite build",
@@ -115,6 +118,8 @@
     }
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.106.0",
     "ai-agent": "file:./packages/Open-Poe-AI/packages/agents",
     "axios": "^1.7.0",
     "next": "^15.0.0",
@@ -126,6 +131,7 @@
     "xtend": "^4.0.2"
   },
   "devDependencies": {
+    "@vercel/sdk": "^1.10.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/vite": "^4.1.18",
     "autoprefixer": "^10.4.24",
