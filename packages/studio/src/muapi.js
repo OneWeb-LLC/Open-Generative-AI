@@ -35,16 +35,19 @@ function getBaseUrl() {
     if (clientConfig.mode === 'direct') {
         return (clientConfig.directUpstream || 'https://api.muapi.ai').replace(/\/$/, '');
     }
+    // vercel-video only overrides T2V/I2V; other studios still use the MuAPI proxy.
+    const proxyPath =
+        clientConfig.mode === 'vercel-video' ? '/api' : clientConfig.proxyPath || '/api';
     try {
         if (import.meta.env?.DEV) {
-            return clientConfig.proxyPath || '/api';
+            return proxyPath;
         }
     } catch {
         /* not a Vite bundle */
     }
     const protocol = window.location?.protocol ?? '';
     if (protocol === 'http:' || protocol === 'https:') {
-        return clientConfig.proxyPath || '/api';
+        return proxyPath;
     }
     return (clientConfig.directUpstream || 'https://api.muapi.ai').replace(/\/$/, '');
 }
