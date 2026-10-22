@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { experimental_generateVideo as generateVideo } from 'ai';
-import { resolveGatewayVideoModel } from '@/lib/ogi/vercel-video-models';
+import {
+  normalizeGatewayResolution,
+  resolveGatewayVideoModel,
+} from '@/lib/ogi/vercel-video-models';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -51,7 +54,7 @@ export async function POST(request) {
 
   const aspectRatio = aspectRatioFromParams(body.aspect_ratio || body.aspectRatio);
   const duration = body.duration != null ? Number(body.duration) : undefined;
-  const resolution = body.resolution;
+  const resolution = normalizeGatewayResolution(body.resolution);
 
   try {
     const started = Date.now();
