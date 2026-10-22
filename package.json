@@ -118,8 +118,11 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^2.0.171",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.106.0",
+    "@vercel/sdk": "^1.10.0",
+    "ai": "^5.0.280",
     "ai-agent": "file:./packages/Open-Poe-AI/packages/agents",
     "axios": "^1.7.0",
     "next": "^15.0.0",
@@ -131,7 +134,6 @@
     "xtend": "^4.0.2"
   },
   "devDependencies": {
-    "@vercel/sdk": "^1.10.0",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/vite": "^4.1.18",
     "autoprefixer": "^10.4.24",

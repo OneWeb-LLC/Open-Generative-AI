@@ -60,7 +60,9 @@
     "delete": "删除",
     "confirmDelete": "确定要删除此生成项吗？",
     "noPromptProvided": "未提供提示词",
-    "fallbackTitle": "视频工作室"
+    "fallbackTitle": "视频工作室",
+    "costUnknown": "—",
+    "costMetaTitle": "生成费用与 API 提供方"
   },
   "empty": {
     "heading": "开始使用",
