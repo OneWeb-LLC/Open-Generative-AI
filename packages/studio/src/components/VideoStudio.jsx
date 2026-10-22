@@ -2,7 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { generateVideo, generateI2V, processV2V, uploadFile } from "../muapi.js";
+import {
+  generateVideo,
+  generateI2V,
+  processV2V,
+  uploadFile,
+  estimateVideoCost,
+  estimateV2VCost,
+  buildGenerationMetadata,
+  formatGenerationCostLabel,
+} from "../muapi.js";
 import { formatErrorMessage } from "../utils/formatError.js";
 import { scopedPersistKey, migrateLegacyPersistKey } from "../persistKey.js";
 import DrawModal from "./DrawModal.jsx";
@@ -772,6 +781,7 @@ function ModelDropdown({ selectedModel, onSelect, onClose, copy = en }) {
 
 export default function VideoStudio({
   apiKey,
+  apiProviderId = "muapi-proxy",
   onGenerationStart,
   onGenerationEnd,
   onGenerationComplete,
@@ -2071,6 +2081,33 @@ export default function VideoStudio({
     setActiveHistoryIdx(0);
   }, []);
 
+  const enrichHistoryEntry = useCallback(
+    (entry, res, estimate) => ({
+      ...entry,
+      meta: buildGenerationMetadata(res, {
+        provider: apiProviderId,
+        model: entry.model,
+        gatewayModel: res.gatewayModel || res.metadata?.gatewayModel || null,
+        estimatedCost: estimate?.cost ?? null,
+        estimatedCurrency: estimate?.currency ?? null,
+      }),
+    }),
+    [apiProviderId],
+  );
+
+  const tryEstimateCost = useCallback(
+    async (params, modelKind) => {
+      if (apiProviderId === "vercel-ai-gateway") return null;
+      try {
+        if (modelKind === "v2v") return await estimateV2VCost(apiKey, params);
+        return await estimateVideoCost(apiKey, params, { modelKind });
+      } catch {
+        return null;
+      }
+    },
+    [apiKey, apiProviderId],
+  );
+
   // ── show result in canvas ─────────────────────────────────────────────────
   const showVideoInCanvas = useCallback((url, model) => {
     setCanvasUrl(url);
@@ -2197,18 +2234,23 @@ export default function VideoStudio({
         if (currentModel?.hasPrompt && trimmedPrompt) {
           v2vParams.prompt = trimmedPrompt;
         }
+        const estimate = await tryEstimateCost(v2vParams, "v2v");
         res = await processV2V(apiKey, v2vParams);
         if (!res?.url) throw new Error(copy.errors.noVideoUrlReturned);
 
         const genId = res.request_id || res.id || Date.now().toString();
-        const entry = {
-          id: genId,
-          url: res.url,
-          prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
-          model: selectedModel,
-          ...groupedHistorySettings,
-          timestamp: new Date().toISOString(),
-        };
+        const entry = enrichHistoryEntry(
+          {
+            id: genId,
+            url: res.url,
+            prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
+            model: selectedModel,
+            ...groupedHistorySettings,
+            timestamp: new Date().toISOString(),
+          },
+          res,
+          estimate,
+        );
         addToLocalHistory(entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
@@ -2235,6 +2277,7 @@ export default function VideoStudio({
         if (!grouped && selectedQuality) i2vParams.quality = selectedQuality;
         if (showEffect && selectedEffect) i2vParams.name = selectedEffect;
 
+        const estimate = await tryEstimateCost(i2vParams, "i2v");
         res = await generateI2V(apiKey, i2vParams);
         if (!res?.url) throw new Error(copy.errors.noVideoUrlReturned);
 
@@ -2242,18 +2285,22 @@ export default function VideoStudio({
         setGenerationSources((sources) =>
           recordGenerationSource(sources, selectedFamily.id, genId, selectedModel),
         );
-        const entry = {
-          id: genId,
-          url: res.url,
-          prompt: trimmedPrompt,
-          model: selectedModel,
-          ...(!grouped ? {
-            ...(aspectRatios.length > 0 ? { aspect_ratio: selectedAr } : {}),
-            duration: selectedDuration,
-          } : {}),
-          ...groupedHistorySettings,
-          timestamp: new Date().toISOString(),
-        };
+        const entry = enrichHistoryEntry(
+          {
+            id: genId,
+            url: res.url,
+            prompt: trimmedPrompt,
+            model: selectedModel,
+            ...(!grouped ? {
+              ...(aspectRatios.length > 0 ? { aspect_ratio: selectedAr } : {}),
+              duration: selectedDuration,
+            } : {}),
+            ...groupedHistorySettings,
+            timestamp: new Date().toISOString(),
+          },
+          res,
+          estimate,
+        );
         addToLocalHistory(entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
@@ -2285,6 +2332,7 @@ export default function VideoStudio({
         if (!grouped && resolutions.length > 0) params.resolution = selectedResolution;
         if (!grouped && !selectedVeoTool && selectedQuality) params.quality = selectedQuality;
 
+        const estimate = await tryEstimateCost(params, "t2v");
         res = await generateVideo(apiKey, params);
         if (!res?.url) throw new Error(copy.errors.noVideoUrlReturned);
 
@@ -2292,18 +2340,22 @@ export default function VideoStudio({
         setGenerationSources((sources) =>
           recordGenerationSource(sources, selectedFamily.id, genId, selectedModel),
         );
-        const entry = {
-          id: genId,
-          url: res.url,
-          prompt: trimmedPrompt,
-          model: selectedModel,
-          ...(!grouped && !selectedVeoTool ? {
-            aspect_ratio: selectedAr,
-            duration: selectedDuration,
-          } : {}),
-          ...groupedHistorySettings,
-          timestamp: new Date().toISOString(),
-        };
+        const entry = enrichHistoryEntry(
+          {
+            id: genId,
+            url: res.url,
+            prompt: trimmedPrompt,
+            model: selectedModel,
+            ...(!grouped && !selectedVeoTool ? {
+              aspect_ratio: selectedAr,
+              duration: selectedDuration,
+            } : {}),
+            ...groupedHistorySettings,
+            timestamp: new Date().toISOString(),
+          },
+          res,
+          estimate,
+        );
         addToLocalHistory(entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
@@ -2352,6 +2404,8 @@ export default function VideoStudio({
     mediaUploading,
     getCurrentModel,
     addToLocalHistory,
+    enrichHistoryEntry,
+    tryEstimateCost,
     showVideoInCanvas,
     onGenerationComplete,
     onGenerationEnd,
@@ -2605,10 +2659,18 @@ export default function VideoStudio({
                       {entry.prompt || copy.gallery.noPromptProvided}
                     </p>
                     <div className="flex items-center justify-between mt-1 flex-wrap gap-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20 whitespace-nowrap capitalize">
-                          {entry.model?.replace("-", " ") || copy.gallery.fallbackTitle}
+                          {entry.model?.replace(/-/g, " ") || copy.gallery.fallbackTitle}
                         </span>
+                        {entry.meta?.gatewayModel && (
+                          <span
+                            className="text-[10px] text-white/35 font-mono truncate max-w-[140px]"
+                            title={entry.meta.gatewayModel}
+                          >
+                            {entry.meta.gatewayModel}
+                          </span>
+                        )}
                         <div className="flex gap-2">
                           {entry.resolution && (
                             <span className="text-[10px] text-white/40">{entry.resolution}</span>
@@ -2618,6 +2680,15 @@ export default function VideoStudio({
                           )}
                         </div>
                       </div>
+                      {entry.meta && (
+                        <span
+                          className="text-[10px] text-white/45 font-mono"
+                          title={copy.gallery.costMetaTitle}
+                        >
+                          {formatGenerationCostLabel(entry.meta, { freeLabel: copy.gallery.costUnknown })}
+                          {entry.meta.provider ? ` · ${entry.meta.provider}` : ""}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

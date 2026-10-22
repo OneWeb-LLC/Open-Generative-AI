@@ -9,8 +9,9 @@ import { pollForGenerationResult } from './utils/generationLifecycle.js';
 import { getModelMediaCapabilities, mapReferenceParams } from './modelCapabilities.js';
 import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
+import { buildGenerationMetadata } from './utils/generationMetadata.js';
 
-/** @typedef {{ mode?: 'proxy' | 'direct', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
+/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
 
 /** @type {GenerativeClientConfig} */
 let clientConfig = {
@@ -89,6 +90,59 @@ function normalizePredictionResult(submitData, result, outputUrl) {
         ...result,
         ...(requestId ? { request_id: requestId } : {}),
         url: outputUrl,
+        cost: result?.cost ?? submitData?.cost,
+    };
+}
+
+async function blobUrlFromDataUrl(dataUrl) {
+    if (typeof window === 'undefined' || !dataUrl?.startsWith('data:')) return dataUrl;
+    try {
+        const blob = await fetch(dataUrl).then((r) => r.blob());
+        return URL.createObjectURL(blob);
+    } catch {
+        return dataUrl;
+    }
+}
+
+async function generateViaVercelGateway(apiKey, params, { imageMode = false } = {}) {
+    const base = (clientConfig.proxyPath || '/api/vercel-gateway').replace(/\/$/, '');
+    const payload = {
+        model: params.model,
+        prompt: params.prompt,
+        aspect_ratio: params.aspect_ratio,
+        duration: params.duration,
+        resolution: params.resolution,
+    };
+    if (imageMode) {
+        payload.image_url =
+            params.image_url ||
+            params.images_list?.[0] ||
+            (Array.isArray(params.image_urls) ? params.image_urls[0] : undefined);
+    }
+
+    const response = await fetch(`${base}/video`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        notifyAuthRequired(response.status, errText);
+        throw new Error(`Vercel gateway video failed: ${response.status} - ${errText.slice(0, 160)}`);
+    }
+
+    const data = await response.json();
+    const playableUrl = await blobUrlFromDataUrl(data.url);
+    return {
+        url: playableUrl,
+        request_id: data.metadata?.requestId || `vercel-${Date.now()}`,
+        gatewayModel: data.gatewayModel,
+        metadata: data.metadata,
+        model: data.model,
     };
 }
 
@@ -181,6 +235,9 @@ export async function decomposeLayers(apiKey, params) {
 }
 
 export async function generateVideo(apiKey, params) {
+    if (clientConfig.mode === 'vercel-video') {
+        return generateViaVercelGateway(apiKey, params, { imageMode: false });
+    }
     const modelInfo = getVideoModelById(params.model);
     const endpoint = modelInfo?.endpoint || params.model;
     const mediaCapabilities = getModelMediaCapabilities(modelInfo);
@@ -207,6 +264,9 @@ export async function generateVideo(apiKey, params) {
 }
 
 export async function generateI2V(apiKey, params) {
+    if (clientConfig.mode === 'vercel-video') {
+        return generateViaVercelGateway(apiKey, params, { imageMode: true });
+    }
     const modelInfo = getI2VModelById(params.model);
     const endpoint = modelInfo?.endpoint || params.model;
     assertRequiredPrompt(modelInfo, params);
@@ -241,6 +301,9 @@ export async function generateMarketingStudioAd(apiKey, params) {
 }
 
 export async function processV2V(apiKey, params) {
+    if (clientConfig.mode === 'vercel-video') {
+        throw new Error('Video tools (V2V) are not available with the Vercel AI Gateway provider. Switch to MuAPI.');
+    }
     const modelInfo = getV2VModelById(params.model);
     const endpoint = modelInfo?.endpoint || params.model;
     const toolPayload = buildVideoToolPayload(modelInfo, params);
@@ -263,7 +326,79 @@ export async function processV2V(apiKey, params) {
     return submitAndPoll(endpoint, payload, apiKey, params.onRequestId, 900);
 }
 
-export async function estimateV2VCost(params, signal) {
+export async function estimateVideoCost(apiKey, params, options = {}, signal) {
+    const modelKind = options.modelKind || 't2v';
+    let modelInfo;
+    if (modelKind === 'i2v') modelInfo = getI2VModelById(params?.model);
+    else if (modelKind === 'v2v') modelInfo = getV2VModelById(params?.model);
+    else modelInfo = getVideoModelById(params?.model);
+
+    const endpoint = modelInfo?.endpoint || params?.model;
+    if (!endpoint) {
+        throw new Error('A video model is required to estimate cost.');
+    }
+
+    let payload;
+    if (modelKind === 'v2v') {
+        payload = {
+            ...buildSupplementalInputPayload(modelInfo, params),
+            ...buildVideoToolPayload(modelInfo, params),
+            ...mapReferenceParams(modelInfo, params),
+        };
+        if (modelInfo?.hasPrompt && params.prompt) payload.prompt = params.prompt;
+    } else {
+        payload = {
+            ...mapReferenceParams(modelInfo, params),
+            ...buildSupplementalInputPayload(modelInfo, params),
+        };
+        if (params.prompt) payload.prompt = params.prompt;
+        if (params.aspect_ratio) payload.aspect_ratio = params.aspect_ratio;
+        if (params.duration) payload.duration = params.duration;
+        if (params.resolution) payload.resolution = params.resolution;
+        if (params.quality) payload.quality = params.quality;
+    }
+
+    if (getGroupedVideoConfiguration(modelInfo?.id)) {
+        for (const field of ['duration', 'aspect_ratio', 'resolution', 'quality']) {
+            if (modelInfo.inputs?.[field] && params[field] !== undefined) {
+                payload[field] = params[field];
+            }
+        }
+    }
+    payload = includeRequiredArrayDefaults(modelInfo, payload);
+
+    const response = await fetch(`${getBaseUrl()}/api/v1/models/${endpoint}/estimate-cost`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+        },
+        body: JSON.stringify(payload),
+        signal,
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Cost estimate failed: ${response.status} ${response.statusText} - ${errText.slice(0, 100)}`);
+    }
+
+    const data = await response.json();
+    if (typeof data?.cost !== 'number' || !Number.isFinite(data.cost) || data.cost < 0) {
+        throw new Error('Cost estimate returned an invalid cost.');
+    }
+    if (typeof data.currency !== 'string' || !/^[A-Za-z]{3}$/.test(data.currency.trim())) {
+        throw new Error('Cost estimate returned an invalid currency.');
+    }
+
+    return {
+        cost: data.cost,
+        currency: data.currency.trim().toUpperCase(),
+    };
+}
+
+export { buildGenerationMetadata, formatGenerationCostLabel } from './utils/generationMetadata.js';
+
+export async function estimateV2VCost(apiKey, params, signal) {
     const modelInfo = getV2VModelById(params?.model);
     const endpoint = modelInfo?.endpoint || params?.model;
     if (!endpoint) {
@@ -273,7 +408,10 @@ export async function estimateV2VCost(params, signal) {
     const payload = buildVideoToolPayload(modelInfo, params);
     const response = await fetch(`${getBaseUrl()}/api/v1/models/${endpoint}/estimate-cost`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+        },
         body: JSON.stringify(payload),
         signal,
     });
