@@ -118,11 +118,11 @@
     }
   },
   "dependencies": {
-    "@ai-sdk/gateway": "^2.0.171",
+    "@ai-sdk/gateway": "^4.0.123",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.106.0",
     "@vercel/sdk": "^1.10.0",
-    "ai": "^5.0.280",
+    "ai": "^7.0.150",
     "ai-agent": "file:./packages/Open-Poe-AI/packages/agents",
     "axios": "^1.7.0",
     "next": "^15.0.0",
