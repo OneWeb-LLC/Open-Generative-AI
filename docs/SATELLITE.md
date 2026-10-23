@@ -12,7 +12,7 @@ This deployment is an OWeb constellation satellite. Identity, workspaces, and bi
 
 | Path | Entry | Notes |
 |------|--------|--------|
-| Native | `/login` | Email/password against shared Supabase Auth (`ao-supabase-auth` session key) |
+| Native | `/login` | **Sign in only** (OneID) — no satellite `signUp`; new users via `oweb.one/signup?launch=open-generative-ai` |
 | OWeb return | `https://oweb.one/login?launch=open-generative-ai` | App Store mints token → `/sso?launch_token=…` |
 | SSO redeem | `/sso` | Satellite `POST /api/sso/redeem` → OWeb `POST /api/v1/ecosystem/redeem-launch-token`, then `setSession` |
 
@@ -24,8 +24,9 @@ Each OWeb **workspace** (`ao_orgs`) is a tenant. The active workspace is stored 
 
 | Layer | Isolation |
 |-------|-----------|
-| Identity / billing | One OS (shared Supabase Auth, `ao_org_members`) |
-| BYOK MuAPI keys | Browser storage keyed by `userId` + `workspaceId` |
+| Identity / billing | One OS (shared Supabase Auth, `ao_org_members`, `ao_orgs.credits_balance`) |
+| Generative billing (production) | `NEXT_PUBLIC_OGI_USE_OWEB_BILLING=true` → studio calls `/api/oweb-studio/generative/*` → OWeb meters workspace OneCredits |
+| BYOK MuAPI keys | Optional when OWeb billing is off; browser storage keyed by `userId` + `workspaceId` |
 | Studio drafts/history | `localStorage` scoped per workspace (`storageScope` on studio components) |
 | Durable outputs (video) | `ogi_workspace_generations` — workspace members read all rows; creators insert; logout-safe |
 | Team management | Settings → **Team** / **Activity**; invites via One OS (OneID); `GET/POST /api/workspace/*` |

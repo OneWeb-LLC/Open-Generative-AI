@@ -14,7 +14,7 @@ import ApiKeyModal from './ApiKeyModal';
 import ApiProviderSelect from './ApiProviderSelect';
 import { getCommonCopy, getLocaleConfig, localizeStudioPath } from '@/lib/locales';
 import { createClient } from '@/lib/supabase/client';
-import { muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
+import { getOwebAppUrl, muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
 import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 import TeamPanel from '@/components/TeamPanel';
@@ -25,6 +25,7 @@ import {
   persistWorkspaceGeneration,
 } from '@/lib/ogi/workspace-generations-client';
 import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
+import { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from '@/lib/ogi/oweb-hosted';
 import {
   loadClientSecret,
   removeClientSecret,
@@ -324,6 +325,7 @@ export default function StandaloneShell({
   workspaces = [],
   apiProviders = [],
   defaultProviderId = 'muapi-proxy',
+  owebBillingEnabled = false,
 }) {
   const params = useParams();
   const router = useRouter();
@@ -496,12 +498,19 @@ export default function StandaloneShell({
 
   const fetchBalance = useCallback(async (key) => {
     try {
+      if (owebBillingEnabled && (isOwebHostedClientKey(key) || !key)) {
+        const res = await fetch('/api/ogi/wallet', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBalance(data.balance ?? data.credits_available ?? null);
+        return;
+      }
       const data = await getUserBalance(key);
       setBalance(data.balance);
     } catch (err) {
       console.error('Balance fetch failed:', err);
     }
-  }, []);
+  }, [owebBillingEnabled]);
 
   const persistVideoToWorkspace = useCallback(async (data) => {
     if (!userId || !workspaceId || !data?.url) return;
@@ -705,18 +714,30 @@ export default function StandaloneShell({
 
       const stored = await loadClientSecret(storageKey);
       const legacy = !stored && !userId ? localStorage.getItem(STORAGE_KEY) : null;
-      const key = stored || legacy;
+      const hostedKey =
+        owebBillingEnabled && userId ? OWEB_HOSTED_CLIENT_KEY : null;
+      const key = stored || legacy || hostedKey;
       if (key) {
         setApiKey(key);
         fetchBalance(key);
-        document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+        if (!isOwebHostedClientKey(key)) {
+          document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+        }
         if (legacy && userId) {
           await saveClientSecret(storageKey, legacy);
           localStorage.removeItem(STORAGE_KEY);
         }
       }
     })();
-  }, [fetchBalance, storageKey, providerStorageKey, defaultProviderId, apiProviders, userId]);
+  }, [
+    fetchBalance,
+    storageKey,
+    providerStorageKey,
+    defaultProviderId,
+    apiProviders,
+    userId,
+    owebBillingEnabled,
+  ]);
 
   useEffect(() => {
     if (!providerId) return;
@@ -762,10 +783,15 @@ export default function StandaloneShell({
   const handleKeyChange = useCallback(() => {
     void removeClientSecret(storageKey);
     if (!userId) localStorage.removeItem(STORAGE_KEY);
-    setApiKey(null);
-    setBalance(null);
+    if (owebBillingEnabled && userId) {
+      setApiKey(OWEB_HOSTED_CLIENT_KEY);
+      void fetchBalance(OWEB_HOSTED_CLIENT_KEY);
+    } else {
+      setApiKey(null);
+      setBalance(null);
+    }
     document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  }, [storageKey, userId]);
+  }, [storageKey, userId, owebBillingEnabled, fetchBalance]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -792,7 +818,7 @@ export default function StandaloneShell({
       const isRelative = config.url.startsWith('/') || !config.url.startsWith('http');
       const isInternalProxy = config.url.includes('/api/app') || config.url.includes('/api/workflow') || config.url.includes('/api/agents') || config.url.includes('/api/api') || config.url.includes('/api/v1');
 
-      if (isRelative || isInternalProxy) {
+      if ((isRelative || isInternalProxy) && !isOwebHostedClientKey(apiKey)) {
         config.headers['x-api-key'] = apiKey;
       }
       
@@ -856,6 +882,13 @@ export default function StandaloneShell({
   );
 
   if (!apiKey) {
+    if (owebBillingEnabled && userId) {
+      return (
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+          <div className="animate-spin text-[#22d3ee] text-3xl">◌</div>
+        </div>
+      );
+    }
     return (
       <ApiKeyModal
         onSave={handleKeySave}
@@ -1463,14 +1496,39 @@ export default function StandaloneShell({
                   {copy.settingsModal.comfyRunpodKeyHint}
                 </p>
               ) : null}
-              <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
-                <label className="block text-xs font-bold text-white/30 mb-2">
-                   {copy.settingsModal.activeApiKey}
-                </label>
-                <div className="text-[13px] font-mono text-white/80">
-                  {apiKey?.slice(0, 8)}••••••••••••••••
+              {owebBillingEnabled && isOwebHostedClientKey(apiKey) ? (
+                <div className="bg-white/5 border border-[#d9ff00]/15 rounded-md p-4 space-y-3">
+                  <p className="text-xs font-bold text-[#d9ff00]/90">
+                    {copy.settingsModal.owebWalletTitle || 'OWeb workspace wallet (OneCredits)'}
+                  </p>
+                  <p className="text-[11px] text-white/45 leading-relaxed">
+                    {copy.settingsModal.owebWalletHint ||
+                      'Generations debit the active workspace balance on OWeb — the same credits your team uses in One OS.'}
+                  </p>
+                  {balance != null && (
+                    <p className="text-sm font-mono text-white/90">
+                      {copy.settingsModal.balanceLabel || 'Balance'}: {balance}
+                    </p>
+                  )}
+                  <a
+                    href={`${getOwebAppUrl()}/billing`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex text-xs font-bold text-[#d9ff00] hover:underline"
+                  >
+                    {copy.settingsModal.owebBillingCta || 'Manage billing & top up on OWeb'}
+                  </a>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
+                  <label className="block text-xs font-bold text-white/30 mb-2">
+                    {copy.settingsModal.activeApiKey}
+                  </label>
+                  <div className="text-[13px] font-mono text-white/80">
+                    {apiKey?.slice(0, 8)}••••••••••••••••
+                  </div>
+                </div>
+              )}
               {userId && workspaceId && (
                 <p className="text-[11px] text-white/35 leading-relaxed">
                   {copy.settingsModal.cloudHistoryHint ||
@@ -1481,12 +1539,14 @@ export default function StandaloneShell({
             )}
 
             <div className="flex gap-3">
-              <button
-                onClick={handleKeyChange}
-                className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
-              >
-                {copy.settingsModal.changeKey}
-              </button>
+              {!(owebBillingEnabled && isOwebHostedClientKey(apiKey)) && (
+                <button
+                  onClick={handleKeyChange}
+                  className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
+                >
+                  {copy.settingsModal.changeKey}
+                </button>
+              )}
               {userId && (
                 <button
                   type="button"

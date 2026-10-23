@@ -14,6 +14,7 @@ export function isMuapiStyleCostProvider(apiProviderId) {
     apiProviderId === 'muapi-proxy' ||
     apiProviderId === 'muapi-direct' ||
     apiProviderId === 'oweb-backend' ||
+    apiProviderId === 'oweb-wallet' ||
     apiProviderId === 'custom' ||
     !apiProviderId
   );
