@@ -5,6 +5,7 @@ import {
   insertWorkspaceGeneration,
   listWorkspaceGenerations,
 } from '@/lib/workspace/generations.server';
+import { requireWorkspaceMember } from '@/lib/workspace/authz.server';
 import { resolveRequestWorkspaceId } from '@/lib/workspace/request-workspace.server';
 
 export async function GET(request) {
@@ -66,6 +67,7 @@ export async function POST(request) {
   }
 
   try {
+    await requireWorkspaceMember(supabase, workspaceId, user.id);
     const row = await insertWorkspaceGeneration(supabase, normalized.row);
     const historyEntry = generationRowToHistoryEntry(row, {
       userId: user.id,
