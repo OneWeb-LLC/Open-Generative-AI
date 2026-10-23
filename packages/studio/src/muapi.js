@@ -19,7 +19,7 @@ import {
 export { PLATFORM_MANAGED_MUAPI_KEY, isPlatformManagedMuapiKey } from './muapiAuth.js';
 export { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from './muapiAuth.js';
 
-/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
+/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, muapiProxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
 
 /** @type {GenerativeClientConfig} */
 let clientConfig = {
@@ -43,13 +43,16 @@ function getBaseUrl() {
     if (clientConfig.mode === 'direct') {
         return (clientConfig.directUpstream || 'https://api.muapi.ai').replace(/\/$/, '');
     }
-    // vercel-video only overrides T2V/I2V; other studios still use the MuAPI proxy.
-    const proxyPath =
-        clientConfig.mode === 'vercel-video'
-            ? '/api'
-            : clientConfig.mode === 'oweb-studio'
-              ? clientConfig.proxyPath || '/api/oweb-studio/generative'
-              : clientConfig.proxyPath || '/api';
+    // vercel-video and comfy-video only override T2V/I2V. Other studios keep using
+    // the MuAPI proxy. Hosts such as OWeb set muapiProxyPath because their proxy
+    // is not mounted at /api.
+    const proxyPath = clientConfig.muapiProxyPath
+        ? clientConfig.muapiProxyPath
+        : clientConfig.mode === 'vercel-video'
+          ? '/api'
+          : clientConfig.mode === 'oweb-studio'
+            ? clientConfig.proxyPath || '/api/oweb-studio/generative'
+            : clientConfig.proxyPath || '/api';
     try {
         if (import.meta.env?.DEV) {
             return proxyPath;
