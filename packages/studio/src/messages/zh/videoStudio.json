@@ -52,11 +52,12 @@
   },
   "costEstimate": {
     "label": "预估",
-    "loading": "正在估算费用…",
-    "unavailable": "暂无费用预估",
+    "loading": "估算中…",
+    "unavailable": "—",
     "unavailableTitle": "{provider} 在当前设置下无法预估费用",
     "readyTitle": "通过 {provider} 预估费用：{amount}",
-    "unknownProvider": "API 提供方"
+    "unknownProvider": "API 提供方",
+    "chipTitle": "预估生成费用"
   },
   "extend": {
     "continuingGeneration": "正在继续上一个 {family} 生成"
