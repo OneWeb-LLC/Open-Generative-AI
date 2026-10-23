@@ -7,11 +7,13 @@ import {
   generateI2V,
   processV2V,
   uploadFile,
-  estimateVideoCost,
-  estimateV2VCost,
   buildGenerationMetadata,
   formatGenerationCostLabel,
 } from "../muapi.js";
+import { fetchVideoGenerationCostEstimate } from "../utils/videoGenerationCostEstimate.js";
+import { buildVideoCostEstimatePayload } from "../utils/buildVideoCostEstimatePayload.js";
+import { useVideoCostEstimate } from "../hooks/useVideoCostEstimate.js";
+import VideoGenerationCostEstimate from "./VideoGenerationCostEstimate.jsx";
 import { formatErrorMessage } from "../utils/formatError.js";
 import { scopedPersistKey, migrateLegacyPersistKey } from "../persistKey.js";
 import DrawModal from "./DrawModal.jsx";
@@ -1114,6 +1116,67 @@ export default function VideoStudio({
     ? seedanceToolLabel(selectedTool, copy, true)
     : selectedVeoTool ? copy.veo.toolNames[selectedVeoTool.key]
     : selectedPickerEntry?.name || selectedFamily.name;
+
+  const costEstimateModelKind = useMemo(
+    () => (v2vMode ? "v2v" : imageMode ? "i2v" : "t2v"),
+    [v2vMode, imageMode],
+  );
+
+  const costEstimateParams = useMemo(() => {
+    const currentModel = getCurrentModel();
+    const workflowMedia = selectedWorkflowId
+      ? activeWorkflowMediaDraft || {}
+      : {
+          imageUrls: uploadedImageUrls,
+          endImageUrl: uploadedEndImageUrl,
+          videoUrls: uploadedVideoUrls,
+          audioUrls: uploadedAudioUrls,
+        };
+    return buildVideoCostEstimatePayload({
+      currentModel,
+      selectedModel,
+      modelKind: costEstimateModelKind,
+      modelParameterValues,
+      selectedAr,
+      selectedDuration,
+      selectedResolution,
+      selectedQuality,
+      selectedWorkflowId,
+      workflowMedia,
+      showEffect,
+      selectedEffect,
+      selectedVeoTool,
+      prompt,
+    });
+  }, [
+    getCurrentModel,
+    selectedModel,
+    costEstimateModelKind,
+    modelParameterValues,
+    selectedAr,
+    selectedDuration,
+    selectedResolution,
+    selectedQuality,
+    selectedWorkflowId,
+    activeWorkflowMediaDraft,
+    uploadedImageUrls,
+    uploadedEndImageUrl,
+    uploadedVideoUrls,
+    uploadedAudioUrls,
+    showEffect,
+    selectedEffect,
+    selectedVeoTool,
+    prompt,
+  ]);
+
+  const liveCostEstimate = useVideoCostEstimate({
+    apiProviderId,
+    apiKey,
+    modelKind: costEstimateModelKind,
+    params: costEstimateParams,
+    freeLabel: copy.gallery.costUnknown,
+  });
+
   const getSelectionPlan = useCallback((options = {}) => planGroupedVideoSelection({
     familyId: selectedFamilyId,
     workflowId: selectedWorkflowId,
@@ -2145,15 +2208,13 @@ export default function VideoStudio({
   );
 
   const tryEstimateCost = useCallback(
-    async (params, modelKind) => {
-      if (apiProviderId === "vercel-ai-gateway" || apiProviderId === "comfy-runpod") return null;
-      try {
-        if (modelKind === "v2v") return await estimateV2VCost(apiKey, params);
-        return await estimateVideoCost(apiKey, params, { modelKind });
-      } catch {
-        return null;
-      }
-    },
+    async (params, modelKind) =>
+      fetchVideoGenerationCostEstimate({
+        apiProviderId,
+        apiKey,
+        modelKind,
+        params,
+      }),
     [apiKey, apiProviderId],
   );
 
@@ -3518,24 +3579,31 @@ export default function VideoStudio({
               )}
             </PromptControls>
 
-            {/* Generate button */}
-            <PromptAction
-              onClick={handleGenerate}
-              disabled={generating || mediaUploading || (selectedTool?.group === "continueGenerated" && !hasContinuationSource) || (selectedVeoTool && !selectedVeoSource)}
-            >
-              {generating ? (
-                <>
-                  <span className="animate-spin inline-block text-black">
-                    ◌
-                  </span>{" "}
-                  {copy.controls.generating}
-                </>
-              ) : (
-                <>
-                  <span>{copy.controls.generate}</span>
-                </>
-              )}
-            </PromptAction>
+            <div className="flex flex-col items-stretch sm:items-end gap-1 shrink-0">
+              <VideoGenerationCostEstimate
+                status={liveCostEstimate.status}
+                label={liveCostEstimate.label}
+                apiProviderId={apiProviderId}
+                copy={copy}
+              />
+              <PromptAction
+                onClick={handleGenerate}
+                disabled={generating || mediaUploading || (selectedTool?.group === "continueGenerated" && !hasContinuationSource) || (selectedVeoTool && !selectedVeoSource)}
+              >
+                {generating ? (
+                  <>
+                    <span className="animate-spin inline-block text-black">
+                      ◌
+                    </span>{" "}
+                    {copy.controls.generating}
+                  </>
+                ) : (
+                  <>
+                    <span>{copy.controls.generate}</span>
+                  </>
+                )}
+              </PromptAction>
+            </div>
           </PromptFooter>
       </PromptComposer>
 

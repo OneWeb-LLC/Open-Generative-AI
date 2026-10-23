@@ -50,6 +50,14 @@
     "generate": "生成",
     "generating": "生成中..."
   },
+  "costEstimate": {
+    "label": "预估",
+    "loading": "正在估算费用…",
+    "unavailable": "暂无费用预估",
+    "unavailableTitle": "{provider} 在当前设置下无法预估费用",
+    "readyTitle": "通过 {provider} 预估费用：{amount}",
+    "unknownProvider": "API 提供方"
+  },
   "extend": {
     "continuingGeneration": "正在继续上一个 {family} 生成"
   },
