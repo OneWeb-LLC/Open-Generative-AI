@@ -50,6 +50,28 @@
     "changeKey": "Change Key",
     "close": "Close"
   },
+  "teamPage": {
+    "navShort": "Team",
+    "banner": "Activate a team workspace for Open Generative AI to enable the switcher and shared library →",
+    "openFullPage": "Open team workspaces page →",
+    "eyebrow": "OneID · Workspace scope",
+    "title": "Team workspaces",
+    "subtitle": "Workspaces your OneID is associated with appear here. Activate Open Generative AI on a workspace to enable the studio switcher, shared library, and team billing for that tenant.",
+    "filterTeam": "Team",
+    "filterPersonal": "Personal",
+    "filterAll": "All",
+    "statusActive": "Active now",
+    "statusActivated": "Activated",
+    "statusAvailable": "Not activated",
+    "activateCta": "Activate here",
+    "activating": "Activating…",
+    "switchCta": "Switch here",
+    "manageOweb": "One OS",
+    "empty": "No workspaces in this filter.",
+    "membersTitle": "Members",
+    "activityTitle": "Recent activity",
+    "signInRequired": "Sign in with your OneID to manage team workspaces."
+  },
   "team": {
     "title": "Team workspace",
     "subtitle": "Onboard teammates with their own OneID. Switch workspaces above to separate personal vs team work.",

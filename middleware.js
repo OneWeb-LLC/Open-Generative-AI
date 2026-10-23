@@ -17,5 +17,8 @@ export const config = {
     '/assistant/:path*',
     '/login',
     '/sso',
+    '/api/workspace/:path*',
+    '/api/auth/:path*',
+    '/api/ogi/:path*',
   ],
 };

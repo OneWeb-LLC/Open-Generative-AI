@@ -48,6 +48,15 @@ assert(
   existsSync(resolve(root, 'app/api/workspace/switch/route.js')),
   'missing workspace switch API',
 );
+assert(
+  existsSync(resolve(root, 'app/api/workspace/catalog/route.js')),
+  'missing workspace catalog API',
+);
+assert(
+  existsSync(resolve(root, 'app/api/workspace/activate/route.js')),
+  'missing workspace activate API',
+);
+assert(existsSync(resolve(root, 'app/studio/team/page.js')), 'missing /studio/team page');
 
 const constants = readFileSync(resolve(root, 'lib/ogi/constants.js'), 'utf8');
 assert(constants.includes("OGI_APP_ID = 'open-generative-ai'"), 'app id must be open-generative-ai');
