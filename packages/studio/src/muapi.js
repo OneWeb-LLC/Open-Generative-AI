@@ -166,6 +166,7 @@ async function generateViaVercelGateway(apiKey, params, { imageMode = false } = 
         gatewayModel: data.gatewayModel,
         metadata: data.metadata,
         model: data.model,
+        cost: data.cost ?? null,
     };
 }
 

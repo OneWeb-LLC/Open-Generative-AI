@@ -2259,6 +2259,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
             type: "video",
+            meta: entry.meta,
           });
       } else if (imageMode) {
         const i2vParams = {
@@ -2309,6 +2310,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",
+            meta: entry.meta,
           });
       } else {
         // T2V (including extend mode)
@@ -2364,6 +2366,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",
+            meta: entry.meta,
           });
       }
     } catch (e) {
