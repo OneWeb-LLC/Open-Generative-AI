@@ -1,3 +1,5 @@
+import { muapiKeyHeaders } from "../muapiAuth.js";
+
 const SUCCESS_STATUSES = new Set(["completed", "succeeded", "success"]);
 const FAILURE_STATUSES = new Set(["failed", "error", "cancelled", "canceled"]);
 
@@ -45,7 +47,7 @@ export async function pollForGenerationResult({
     let response;
     try {
       response = await fetchImpl(pollUrl, {
-        headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+        headers: { "Content-Type": "application/json", ...muapiKeyHeaders(apiKey) },
       });
     } catch (error) {
       if (attempt === maxAttempts) throw error;

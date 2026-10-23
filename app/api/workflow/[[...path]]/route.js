@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
+import { resolveMuapiApiKeyFromRequest } from '@/lib/ogi/muapi-api-key.server';
 
 const MUAPI_BASE = 'https://api.muapi.ai';
-
-function getApiKey(request) {
-    // Only accept x-api-key header. Cookie-based auth is removed for security:
-    // cookies without HttpOnly flag can be stolen by any XSS (CWE-522).
-    const headerKey = request.headers.get('x-api-key');
-    return headerKey || null;
-}
 
 function cleanHeaders(request) {
     const headers = new Headers(request.headers);
@@ -27,7 +21,7 @@ export async function GET(request, { params }) {
 
     const headers = cleanHeaders(request);
 
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     // NOTE: apiKey is intentionally NOT logged here to prevent credential leakage (CWE-200)
     if (apiKey) headers.set('x-api-key', apiKey);
 
@@ -56,7 +50,7 @@ export async function POST(request, { params }) {
 
     const headers = cleanHeaders(request);
 
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     // NOTE: credential logging removed for security (CWE-200)
     if (apiKey) headers.set('x-api-key', apiKey);
 
@@ -91,7 +85,7 @@ export async function DELETE(request, { params }) {
 
     const headers = cleanHeaders(request);
 
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     if (apiKey) headers.set('x-api-key', apiKey);
 
     try {
@@ -116,7 +110,7 @@ export async function PUT(request, { params }) {
 
     const headers = cleanHeaders(request);
 
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     if (apiKey) headers.set('x-api-key', apiKey);
 
     try {

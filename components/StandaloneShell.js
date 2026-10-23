@@ -15,6 +15,10 @@ import ApiProviderSelect from './ApiProviderSelect';
 import { getCommonCopy, getLocaleConfig, localizeStudioPath } from '@/lib/locales';
 import { createClient } from '@/lib/supabase/client';
 import { muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
+import {
+  PLATFORM_MANAGED_MUAPI_KEY,
+  isPlatformManagedMuapiKey,
+} from '@/lib/ogi/muapi-client';
 import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
@@ -281,6 +285,15 @@ const STORAGE_KEY = 'muapi_key';
 const NOTIFICATIONS_STORAGE_KEY = 'open_gen_notifications_v1';
 const MAX_VISIBLE_NOTIFICATIONS = 3;
 
+function syncMuapiKeyCookie(key) {
+  if (typeof document === 'undefined') return;
+  if (!key || isPlatformManagedMuapiKey(key)) {
+    document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    return;
+  }
+  document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 const loadStoredNotifications = () => {
   if (typeof window === 'undefined') return [];
 
@@ -317,6 +330,7 @@ export default function StandaloneShell({
   workspaces = [],
   apiProviders = [],
   defaultProviderId = 'muapi-proxy',
+  platformMuapiKeyConfigured = false,
 }) {
   const params = useParams();
   const router = useRouter();
@@ -623,18 +637,29 @@ export default function StandaloneShell({
 
       const stored = await loadClientSecret(storageKey);
       const legacy = !stored && !userId ? localStorage.getItem(STORAGE_KEY) : null;
-      const key = stored || legacy;
+      const key =
+        stored ||
+        legacy ||
+        (platformMuapiKeyConfigured ? PLATFORM_MANAGED_MUAPI_KEY : null);
       if (key) {
         setApiKey(key);
         fetchBalance(key);
-        document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+        syncMuapiKeyCookie(key);
         if (legacy && userId) {
           await saveClientSecret(storageKey, legacy);
           localStorage.removeItem(STORAGE_KEY);
         }
       }
     })();
-  }, [fetchBalance, storageKey, providerStorageKey, defaultProviderId, apiProviders, userId]);
+  }, [
+    fetchBalance,
+    storageKey,
+    providerStorageKey,
+    defaultProviderId,
+    apiProviders,
+    userId,
+    platformMuapiKeyConfigured,
+  ]);
 
   useEffect(() => {
     if (!providerId) return;
@@ -672,7 +697,7 @@ export default function StandaloneShell({
       }
       setApiKey(key);
       fetchBalance(key);
-      document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+      syncMuapiKeyCookie(key);
     },
     [fetchBalance, storageKey, providerId, providerStorageKey, syncClientForProvider],
   );
@@ -680,10 +705,15 @@ export default function StandaloneShell({
   const handleKeyChange = useCallback(() => {
     void removeClientSecret(storageKey);
     if (!userId) localStorage.removeItem(STORAGE_KEY);
-    setApiKey(null);
-    setBalance(null);
-    document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  }, [storageKey, userId]);
+    if (platformMuapiKeyConfigured) {
+      setApiKey(PLATFORM_MANAGED_MUAPI_KEY);
+      void fetchBalance(PLATFORM_MANAGED_MUAPI_KEY);
+    } else {
+      setApiKey(null);
+      setBalance(null);
+    }
+    syncMuapiKeyCookie(null);
+  }, [storageKey, userId, platformMuapiKeyConfigured, fetchBalance]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -710,7 +740,7 @@ export default function StandaloneShell({
       const isRelative = config.url.startsWith('/') || !config.url.startsWith('http');
       const isInternalProxy = config.url.includes('/api/app') || config.url.includes('/api/workflow') || config.url.includes('/api/agents') || config.url.includes('/api/api') || config.url.includes('/api/v1');
 
-      if (isRelative || isInternalProxy) {
+      if ((isRelative || isInternalProxy) && !isPlatformManagedMuapiKey(apiKey)) {
         config.headers['x-api-key'] = apiKey;
       }
       
@@ -1330,7 +1360,9 @@ export default function StandaloneShell({
                    {copy.settingsModal.activeApiKey}
                 </label>
                 <div className="text-[13px] font-mono text-white/80">
-                  {apiKey.slice(0, 8)}••••••••••••••••
+                  {isPlatformManagedMuapiKey(apiKey)
+                    ? (copy.settingsModal.platformApiKey || 'Managed on server (MUAPI_KEY)')
+                    : `${apiKey.slice(0, 8)}••••••••••••••••`}
                 </div>
               </div>
             </div>

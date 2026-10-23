@@ -41,6 +41,7 @@
     "title": "Settings",
     "subtitle": "Manage your AI studio preferences and authentication.",
     "activeApiKey": "Active API Key",
+    "platformApiKey": "Managed on server (Vercel MUAPI_KEY)",
     "vercelGatewayKeyHint": "Vercel AI Gateway (video) uses the server AI_GATEWAY_API_KEY on this Vercel project — not the MuAPI workspace key below. Leave this key as-is unless you use MuAPI (satellite proxy).",
     "comfyRunpodKeyHint": "ComfyUI on RunPod uses the team RUNPOD_API_KEY on this Vercel project. The MuAPI workspace key below is not used for Oweb Sol video generation.",
     "changeKey": "Change Key",

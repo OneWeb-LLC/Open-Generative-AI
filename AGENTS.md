@@ -30,4 +30,4 @@ npm run smoke:satellite
 
 ## Local dev without One OS secrets
 
-Set `NEXT_PUBLIC_OGI_REQUIRE_AUTH=false` to open `/studio` without login (MuAPI BYOK still required). SSO redeem calls OWeb platform API (requires OWeb PR #57 on production).
+Set `NEXT_PUBLIC_OGI_REQUIRE_AUTH=false` to open `/studio` without login (MuAPI BYOK or server `MUAPI_KEY` still required for generations). SSO redeem calls OWeb platform API (requires OWeb PR #57 on production).
