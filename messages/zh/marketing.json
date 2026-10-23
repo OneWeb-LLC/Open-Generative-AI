@@ -1,14 +1,19 @@
 {
   "meta": {
     "homeDescription": "使用 200+ 模型生成 AI 图像与视频。一个 OWeb 账号、你的 MuAPI 密钥、按工作区隔离的工作室。",
-    "featuresDescription": "图像、视频、电影、对口型、智能体与工作流，集于同一创意工作室。"
+    "featuresDescription": "图像、视频、电影、对口型、智能体与工作流，集于同一创意工作室。",
+    "pricingDescription": "自备 MuAPI 密钥或使用 OWeb 托管额度。透明、按工作区计费。",
+    "securityDescription": "符合 SOC 2 原则的控制、租户隔离与 BYOK 生成式 API 访问。"
   },
   "nav": {
     "features": "功能",
+    "pricing": "定价",
+    "security": "安全",
     "studio": "工作室",
     "signIn": "登录",
     "openDashboard": "打开控制台",
-    "getStarted": "开始使用"
+    "getStarted": "开始使用",
+    "menu": "菜单"
   },
   "home": {
     "eyebrow": "OWeb 卫星应用 · OneID",
@@ -16,7 +21,70 @@
     "subhead": "浏览器中的完整创意工作室 — Flux、Kling、Veo、Wan 及 200+ 模型。与 OWeb 同一登录。自备 MuAPI 密钥。",
     "primaryCta": "打开工作室",
     "secondaryCta": "查看功能",
-    "trustLine": "工作区隔离 · BYOK · auth.oweb.one"
+    "trustLine": "工作区隔离 · BYOK · auth.oweb.one",
+    "promptPlaceholder": "描述你想创作的内容…",
+    "promptCta": "创作"
+  },
+  "models": {
+    "title": "200+ 模型，一个工作室",
+    "subtitle": "无需换产品即可切换提供商 — 图像、视频、音频与电影在同一界面。",
+    "tags": ["Flux", "Midjourney", "Kling", "Veo", "Seedance", "Wan", "LTX", "Ideogram", "Runway", "Grok"]
+  },
+  "showcase": {
+    "title": "全模态，一个工作区",
+    "subtitle": "分标签工作室共享历史、拖放与 API 密钥范围。",
+    "items": [
+      {
+        "title": "图像工作室",
+        "body": "文生图、图生图、局部重绘与放大，覆盖主流扩散模型。",
+        "accent": "#e8f0fe"
+      },
+      {
+        "title": "视频工作室",
+        "body": "文本与图像生成视频，经网关路由至 Kling、Veo、Seedance 等。",
+        "accent": "#fce8e6"
+      },
+      {
+        "title": "电影与图层",
+        "body": "镜头预设、合成与专业构图，输出电影感画面。",
+        "accent": "#e6f4ea"
+      },
+      {
+        "title": "对口型与音频",
+        "body": "音频驱动面部、声音克隆与营销剪辑同步。",
+        "accent": "#fef7e0"
+      },
+      {
+        "title": "智能体与工作流",
+        "body": "多步自动化与 MuAPI 智能体，无需离开外壳。",
+        "accent": "#f3e8fd"
+      },
+      {
+        "title": "OWeb 应用",
+        "body": "在同一导航与身份下启动可变现模板。",
+        "accent": "#e8eaed"
+      }
+    ]
+  },
+  "highlights": {
+    "title": "像您熟悉的工具一样好用",
+    "items": [
+      {
+        "title": "简洁专注的界面",
+        "body": "平静的工作区与清晰导航 — 减少干扰，专注渲染。",
+        "imageSide": "right"
+      },
+      {
+        "title": "工作区记忆",
+        "body": "团队生成记录、共享活动与按工作区隔离的 API 密钥 — 为运营团队设计。",
+        "imageSide": "left"
+      },
+      {
+        "title": "原生生态",
+        "body": "OneID 登录、与 OWeb 一致的工作区切换，以及应用商店 SSO 启动。",
+        "imageSide": "right"
+      }
+    ]
   },
   "pillars": {
     "title": "一个工作区，涵盖全流程",
@@ -48,23 +116,53 @@
       },
       {
         "title": "添加 MuAPI 密钥",
-        "body": "密钥按工作区保存在浏览器中，由你控制费用与访问。"
+        "body": "密钥按工作区保存在浏览器中。您掌控费用与访问。"
       },
       {
         "title": "在工作室中创作",
-        "body": "选择工具标签与模型即可生成 — 结果保留在你的会话中。"
+        "body": "选择工具标签与模型即可生成 — 结果保留在会话中。"
+      }
+    ]
+  },
+  "faq": {
+    "title": "常见问题",
+    "items": [
+      {
+        "q": "需要单独注册吗？",
+        "a": "不需要。使用您已有的 OWeb OneID。Artemiis One 是共享 One OS 认证的卫星应用。"
+      },
+      {
+        "q": "API 密钥存放在哪里？",
+        "a": "BYOK 密钥默认按用户与工作区保存在浏览器中；团队托管代理时由配置决定。卫星服务器默认不存储 MuAPI 密钥。"
+      },
+      {
+        "q": "团队可以共享生成记录吗？",
+        "a": "可以。工作区范围的生成历史与团队面板帮助协作，无需共享密码。"
+      },
+      {
+        "q": "这与 OWeb 是同一个产品吗？",
+        "a": "Artemiis One 专注生成式媒体。OWeb 仍是控制平面 — 可从商店启动或直接登录。"
       }
     ]
   },
   "cta": {
     "title": "准备好创作了吗？",
-    "body": "打开工作室控制台，或登录以同步 OWeb 工作区。",
-    "signedIn": "在工作室中继续上次的工作。",
+    "signedIn": "在工作室中继续您未完成的工作。",
     "signedOut": "使用与 OWeb 相同的账号登录。"
   },
   "featuresPage": {
-    "headline": "为专业创意工作而设计",
-    "subhead": "各标签工作室共享同一外壳、同一 API 密钥范围与同一 OWeb 身份。",
+    "headline": "为严肃创意工作而打造",
+    "subhead": "分标签工作室共享同一外壳、API 密钥范围与 OWeb 身份。",
+    "studioGridTitle": "工作室一览",
+    "compareTitle": "团队为何选择 Artemiis One",
+    "compareHeaders": ["能力", "Artemiis One", "典型单模型界面"],
+    "compareRows": [
+      ["跨模态 200+ 模型", "是", "常为单一厂商"],
+      ["OWeb OneID 与工作区", "是", "独立登录"],
+      ["BYOK MuAPI 密钥", "是", "不一"],
+      ["视频+图像+智能体同一外壳", "是", "通常多应用"],
+      ["可自托管卫星", "是", "少见"]
+    ],
     "sections": [
       {
         "title": "工作室",
@@ -77,7 +175,7 @@
       },
       {
         "title": "OWeb 生态",
-        "body": "Artemiis One 是按工作区隔离的卫星应用 — 可从 OWeb 启动或直接登录。",
+        "body": "Artemiis One 是按工作区隔离的卫星应用 — 从 OWeb 启动或直接登录。",
         "bullets": [
           "共享 Supabase 会话 (ao-supabase-auth)",
           "工作区切换与 OWeb 团队一致",
@@ -86,22 +184,109 @@
       },
       {
         "title": "隐私与密钥",
-        "body": "生成通过 MuAPI 与你的密钥路由；在配置处可选用本地与网关提供商。",
+        "body": "生成经 MuAPI 与您的密钥路由；可按配置使用网关与 RunPod。",
         "bullets": [
-          "BYOK 按用户与工作区存储",
+          "按用户与工作区存储 BYOK",
           "卫星端无 service role",
           "配置数据的行级安全"
         ]
       }
+    ],
+    "studios": [
+      "图像",
+      "图层",
+      "视频",
+      "电影",
+      "对口型",
+      "音频",
+      "剪辑",
+      "营销",
+      "工作流",
+      "智能体",
+      "OWeb 应用",
+      "AI 网红"
     ]
+  },
+  "pricingPage": {
+    "headline": "简单透明的定价",
+    "subhead": "工作室软件免费使用。您为所选模型付费 — 直连或通过 OWeb 托管额度。",
+    "plans": [
+      {
+        "name": "自备密钥",
+        "price": "工作室免费",
+        "detail": "向 MuAPI/提供商支付用量",
+        "bullets": [
+          "OWeb 登录后完整工作室",
+          "API 密钥按工作区存于浏览器",
+          "在提供商侧掌控支出"
+        ],
+        "cta": "开始使用"
+      },
+      {
+        "name": "OWeb 托管",
+        "price": "工作区额度",
+        "detail": "通过 OWeb 钱包计费",
+        "bullets": [
+          "符合条件的工作区无需粘贴密钥",
+          "集中计量与策略",
+          "相同工作室体验"
+        ],
+        "cta": "打开 OWeb"
+      },
+      {
+        "name": "企业版",
+        "price": "联系我们",
+        "detail": "定制 SSO、限额与支持",
+        "bullets": [
+          "子处理器专项审查",
+          "安全问卷支持",
+          "部署到您的 Vercel 项目"
+        ],
+        "cta": "联系支持"
+      }
+    ],
+    "note": "模型价格随提供商变动。请参阅 MuAPI 与网关文档了解当前单次生成费率。"
+  },
+  "securityPage": {
+    "headline": "可向采购说明的安全能力",
+    "subhead": "符合 SOC 2 信任原则 — 对工作区数据的保密性、完整性与可用性。",
+    "sections": [
+      {
+        "title": "身份与访问",
+        "bullets": [
+          "经 Supabase Auth 的 OWeb OneID — 无重复密码孤岛",
+          "工作区角色与成员 API",
+          "工作室与智能体路由的会话中间件"
+        ]
+      },
+      {
+        "title": "数据隔离",
+        "bullets": [
+          "One OS 上的卫星表前缀与 RLS",
+          "生成记录限定在工作区",
+          "BYOK 密钥默认不在服务端持久化"
+        ]
+      },
+      {
+        "title": "运营",
+        "bullets": [
+          "传输 TLS；经 Supabase/Vercel 静态加密",
+          "认证与 redeem 流程可审计日志",
+          "隐私政策中的子处理器列表"
+        ]
+      }
+    ],
+    "cta": "阅读隐私政策"
   },
   "footer": {
     "product": "产品",
-    "ecosystem": "OWeb 星座应用之一",
-    "owebLink": "OWeb",
+    "resources": "资源",
+    "legal": "法律",
+    "ecosystem": "OWeb 星座的一部分",
+    "owebLink": "OWeb 平台",
     "login": "登录",
-    "privacy": "隐私政策",
-    "terms": "服务条款",
+    "privacy": "隐私",
+    "terms": "条款",
     "copyright": "Artemiis One"
   }
 }

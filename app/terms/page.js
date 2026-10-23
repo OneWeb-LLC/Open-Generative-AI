@@ -53,7 +53,7 @@ export default function TermsPage() {
         <LegalSection id="agreement" title="1. Agreement to these Terms">
           <p>
             By accessing or using {SITE_NAME}, you agree to these Terms and our{' '}
-            <Link href="/privacy" className="text-white hover:underline">
+            <Link href="/privacy" className="text-[#1a73e8] hover:underline">
               Privacy Policy
             </Link>
             . If you use the service on behalf of an organization, you represent that you have
@@ -189,11 +189,11 @@ export default function TermsPage() {
         <LegalSection id="contact" title="16. Contact">
           <p>
             Legal inquiries:{' '}
-            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-white hover:underline">
+            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-[#1a73e8] hover:underline">
               {PRIVACY_EMAIL}
             </a>
             . Support:{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-white hover:underline">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#1a73e8] hover:underline">
               {SUPPORT_EMAIL}
             </a>
             .

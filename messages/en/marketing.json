@@ -1,14 +1,19 @@
 {
   "meta": {
     "homeDescription": "Generate AI images and videos with 200+ models. One OWeb account, your MuAPI key, workspace-scoped studio.",
-    "featuresDescription": "Image, video, cinema, lip sync, agents, and workflows in one creative studio."
+    "featuresDescription": "Image, video, cinema, lip sync, agents, and workflows in one creative studio.",
+    "pricingDescription": "Bring your own MuAPI key or use OWeb-hosted credits. Transparent, workspace-scoped billing.",
+    "securityDescription": "SOC 2–aligned controls, tenant isolation, and BYOK for generative API access."
   },
   "nav": {
     "features": "Features",
+    "pricing": "Pricing",
+    "security": "Security",
     "studio": "Studio",
     "signIn": "Sign in",
     "openDashboard": "Open dashboard",
-    "getStarted": "Get started"
+    "getStarted": "Get started",
+    "menu": "Menu"
   },
   "home": {
     "eyebrow": "OWeb satellite · OneID",
@@ -16,7 +21,70 @@
     "subhead": "A full creative studio in your browser — Flux, Kling, Veo, Wan, and 200+ models. Same sign-in as OWeb. Bring your own MuAPI key.",
     "primaryCta": "Open studio",
     "secondaryCta": "See features",
-    "trustLine": "Workspace-scoped · BYOK · auth.oweb.one"
+    "trustLine": "Workspace-scoped · BYOK · auth.oweb.one",
+    "promptPlaceholder": "Describe what you want to create…",
+    "promptCta": "Create"
+  },
+  "models": {
+    "title": "200+ models, one studio",
+    "subtitle": "Switch providers without switching products — image, video, audio, and cinema in the same shell.",
+    "tags": ["Flux", "Midjourney", "Kling", "Veo", "Seedance", "Wan", "LTX", "Ideogram", "Runway", "Grok"]
+  },
+  "showcase": {
+    "title": "Every modality, one workspace",
+    "subtitle": "Tab-based studios share history, drag-and-drop, and your API key scope.",
+    "items": [
+      {
+        "title": "Image Studio",
+        "body": "Text-to-image, img2img, inpainting, and upscaling across top-tier diffusion models.",
+        "accent": "#e8f0fe"
+      },
+      {
+        "title": "Video Studio",
+        "body": "Text and image to video with gateway routing to Kling, Veo, Seedance, and more.",
+        "accent": "#fce8e6"
+      },
+      {
+        "title": "Cinema & layers",
+        "body": "Lens presets, compositing, and professional shot framing for cinematic output.",
+        "accent": "#e6f4ea"
+      },
+      {
+        "title": "Lip sync & audio",
+        "body": "Drive faces with audio, clone voices, and sync marketing cuts.",
+        "accent": "#fef7e0"
+      },
+      {
+        "title": "Agents & workflows",
+        "body": "Multi-step automations and MuAPI agents without leaving the shell.",
+        "accent": "#f3e8fd"
+      },
+      {
+        "title": "OWeb Apps",
+        "body": "Launch revenue-ready templates from the same navigation and identity.",
+        "accent": "#e8eaed"
+      }
+    ]
+  },
+  "highlights": {
+    "title": "Designed like the tools you already trust",
+    "items": [
+      {
+        "title": "Clean, focused UI",
+        "body": "A calm workspace with clear navigation — no clutter between you and the render queue.",
+        "imageSide": "right"
+      },
+      {
+        "title": "Workspace memory",
+        "body": "Team generations, shared activity, and scoped API keys per workspace — built for operators, not hobby tabs.",
+        "imageSide": "left"
+      },
+      {
+        "title": "Ecosystem native",
+        "body": "Sign in with OneID, switch workspaces like OWeb, and launch from the App Store with SSO redeem.",
+        "imageSide": "right"
+      }
+    ]
   },
   "pillars": {
     "title": "Everything in one workspace",
@@ -56,15 +124,45 @@
       }
     ]
   },
+  "faq": {
+    "title": "Common questions",
+    "items": [
+      {
+        "q": "Do I need a separate account?",
+        "a": "No. Use the same OWeb OneID you already have. Artemiis One is a satellite app on shared One OS auth."
+      },
+      {
+        "q": "Where is my API key stored?",
+        "a": "BYOK keys are stored in your browser per user and workspace unless your team uses a hosted proxy. We do not store MuAPI secrets on the satellite server by default."
+      },
+      {
+        "q": "Can my team share generations?",
+        "a": "Yes. Workspace-scoped generation history and team panels help operators collaborate without sharing passwords."
+      },
+      {
+        "q": "Is this the same as OWeb?",
+        "a": "Artemiis One is focused on generative media. OWeb remains your control plane — launch this app from the store or sign in directly."
+      }
+    ]
+  },
   "cta": {
     "title": "Ready to create?",
-    "body": "Open the studio dashboard or sign in to sync your OWeb workspace.",
     "signedIn": "Continue where you left off in the studio.",
     "signedOut": "Sign in with the same account you use on OWeb."
   },
   "featuresPage": {
     "headline": "Built for serious creative work",
     "subhead": "Tab-based studios share one shell, one API key scope, and one OWeb identity.",
+    "studioGridTitle": "Studios at a glance",
+    "compareTitle": "Why teams pick Artemiis One",
+    "compareHeaders": ["Capability", "Artemiis One", "Typical single-model UIs"],
+    "compareRows": [
+      ["200+ models across modalities", "Yes", "Often single vendor"],
+      ["OWeb OneID & workspaces", "Yes", "Separate login"],
+      ["BYOK MuAPI key", "Yes", "Varies"],
+      ["Video + image + agents in one shell", "Yes", "Usually split apps"],
+      ["Self-hostable satellite", "Yes", "Rare"]
+    ],
     "sections": [
       {
         "title": "Studios",
@@ -86,19 +184,106 @@
       },
       {
         "title": "Privacy & keys",
-        "body": "Generation routes through MuAPI with your key; optional local and gateway providers where configured.",
+        "body": "Generation routes through MuAPI with your key; optional gateway and RunPod providers where configured.",
         "bullets": [
           "BYOK stored per user and workspace",
           "No service role on the satellite",
           "Row-level security on profile data"
         ]
       }
+    ],
+    "studios": [
+      "Image",
+      "Layers",
+      "Video",
+      "Cinema",
+      "Lip sync",
+      "Audio",
+      "Clipping",
+      "Marketing",
+      "Workflows",
+      "Agents",
+      "OWeb Apps",
+      "AI Influencer"
     ]
+  },
+  "pricingPage": {
+    "headline": "Simple, honest pricing",
+    "subhead": "The studio software is free to use. You pay the models you choose — directly or through OWeb-hosted credits.",
+    "plans": [
+      {
+        "name": "Bring your own key",
+        "price": "Free studio",
+        "detail": "Pay MuAPI / providers for usage",
+        "bullets": [
+          "Full studio access with OWeb sign-in",
+          "API key in your browser per workspace",
+          "You control spend at the provider"
+        ],
+        "cta": "Get started"
+      },
+      {
+        "name": "OWeb hosted",
+        "price": "Workspace credits",
+        "detail": "Billed through your OWeb wallet",
+        "bullets": [
+          "No key paste for eligible workspaces",
+          "Centralized metering and policies",
+          "Same studio experience"
+        ],
+        "cta": "Open OWeb"
+      },
+      {
+        "name": "Enterprise",
+        "price": "Contact us",
+        "detail": "Custom SSO, limits, and support",
+        "bullets": [
+          "Dedicated review of subprocessors",
+          "Security questionnaire support",
+          "Deployment on your Vercel project"
+        ],
+        "cta": "Contact support"
+      }
+    ],
+    "note": "Model prices change with providers. See MuAPI and gateway docs for current per-generation rates."
+  },
+  "securityPage": {
+    "headline": "Security you can explain to procurement",
+    "subhead": "Controls aligned with SOC 2 trust principles — confidentiality, integrity, and availability for workspace data.",
+    "sections": [
+      {
+        "title": "Identity & access",
+        "bullets": [
+          "OWeb OneID via Supabase Auth — no duplicate password silo",
+          "Workspace-scoped roles and membership APIs",
+          "Session middleware on studio and agent routes"
+        ]
+      },
+      {
+        "title": "Data isolation",
+        "bullets": [
+          "Satellite table prefix and RLS on One OS",
+          "Generation records scoped to workspace",
+          "BYOK keys not persisted server-side by default"
+        ]
+      },
+      {
+        "title": "Operations",
+        "bullets": [
+          "TLS in transit; encryption at rest via Supabase/Vercel",
+          "Audit-friendly logging on auth and redeem flows",
+          "Subprocessor list in Privacy Policy"
+        ]
+      }
+    ],
+    "cta": "Read Privacy Policy"
   },
   "footer": {
     "product": "Product",
+    "resources": "Resources",
+    "legal": "Legal",
     "ecosystem": "Part of the OWeb constellation",
-    "owebLink": "OWeb",
+    "owebLink": "OWeb platform",
     "login": "Sign in",
     "privacy": "Privacy",
     "terms": "Terms",

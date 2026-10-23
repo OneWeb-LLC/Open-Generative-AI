@@ -8,7 +8,7 @@ export default function ContinueWithOweb({ label = 'Continue with OWeb', classNa
   return (
     <a
       href={href}
-      className={`inline-flex w-full items-center justify-center rounded-lg border border-[#d9ff00]/30 bg-[#d9ff00]/10 px-5 py-2.5 text-sm font-semibold text-[#d9ff00] no-underline transition hover:bg-[#d9ff00]/20 ${className}`}
+      className={`inline-flex w-full items-center justify-center rounded-full border border-[#dadce0] bg-white px-5 py-2.5 text-sm font-medium text-[#1a73e8] no-underline shadow-sm transition hover:bg-[#f8f9fa] ${className}`}
     >
       {label}
     </a>
