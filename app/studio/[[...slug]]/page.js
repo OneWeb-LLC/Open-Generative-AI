@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import StandaloneShell from '@/components/StandaloneShell';
-import { getDefaultApiProviderId, getPublicApiProviders } from '@/lib/ogi/api-providers';
+import { getStudioShellProps } from '@/lib/ogi/studio-shell-props.server';
 import { isAuthRequired } from '@/lib/ogi/constants';
 import { formatOneId, fetchOneIdHandle, oneIdFromUserMetadata } from '@/lib/oneid';
 import { createClient } from '@/lib/supabase/server';
@@ -14,9 +14,7 @@ export const metadata = {
 };
 
 export default async function StudioPage() {
-  const apiProviders = getPublicApiProviders();
-  const defaultProviderId = getDefaultApiProviderId();
-  const shellProps = { apiProviders, defaultProviderId };
+  const shellProps = getStudioShellProps();
 
   let supabase;
   try {

@@ -21,6 +21,16 @@
 | `NEXT_PUBLIC_OGI_REQUIRE_AUTH` | `true` in production (middleware protects `/studio`) |
 | `SUPABASE_URL` | Server alias for URL (optional if `NEXT_PUBLIC_*` set) |
 
+## OWeb workspace billing (production satellite)
+
+| Variable | Client | Purpose |
+|----------|--------|---------|
+| `NEXT_PUBLIC_OGI_USE_OWEB_BILLING` | yes | `true` — studio uses OWeb OneCredits (`oweb-wallet` provider) |
+| `OGI_OWEB_STUDIO_UPSTREAM` | no | OWeb hosted generative base (default `{NEXT_PUBLIC_OWEB_APP_URL}/api/studio/generative`) |
+| `NEXT_PUBLIC_OGI_OWEB_WALLET_LABEL` | yes | Settings label for wallet provider |
+
+Wallet balance: satellite `GET /api/ogi/wallet` reads `ao_orgs.credits_balance` for the active workspace cookie. Generations: browser → `/api/oweb-studio/generative/*` → OWeb (Bearer JWT + `x-org-id`).
+
 ## Generative API providers (studio UI)
 
 | Variable | Client | Purpose |
@@ -38,7 +48,7 @@ Sync Supabase/OWeb public env from the **oweb** Vercel project: `VERCEL_TOKEN=�
 
 - **No `SUPABASE_SERVICE_ROLE_KEY`** — SSO launch tokens are redeemed via OWeb `POST /api/v1/ecosystem/redeem-launch-token` (satellite server calls OWeb; OWeb uses service role centrally).
 - No second Supabase project
-- No shared MuAPI platform key (BYOK per user per workspace in browser storage)
+- No satellite MuAPI platform key when OWeb billing is on (OWeb hosts `MUAPI_KEY` for metering). BYOK remains available when billing flag is off.
 - No Clerk / app-local password store
 
 Apply DB migrations in `supabase/migrations/` on One OS before profile upsert and workspace preferences in production.
