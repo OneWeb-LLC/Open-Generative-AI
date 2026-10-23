@@ -5,6 +5,7 @@ import {
   t2vModels,
   v2vModels,
 } from "./models.js";
+import { OWEB_SOL_I2V_MODELS, OWEB_SOL_T2V_MODELS } from "./owebSolModels.js";
 import { getModelMediaCapabilities } from "./modelCapabilities.js";
 import {
   getGroupedVideoConfiguration,
@@ -577,10 +578,13 @@ export const imageModelCatalog = buildCatalog(
   },
 );
 
+const studioT2vModels = [...t2vModels, ...OWEB_SOL_T2V_MODELS];
+const studioI2vModels = [...i2vModels, ...OWEB_SOL_I2V_MODELS];
+
 export const videoModelCatalog = buildCatalog(
   [
-    { mode: "t2v", models: t2vModels },
-    { mode: "i2v", models: i2vModels },
+    { mode: "t2v", models: studioT2vModels },
+    { mode: "i2v", models: studioI2vModels },
     { mode: "v2v", models: v2vModels },
   ],
   {

@@ -11,7 +11,7 @@ import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
 import { buildGenerationMetadata } from './utils/generationMetadata.js';
 
-/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
+/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
 
 /** @type {GenerativeClientConfig} */
 let clientConfig = {
@@ -105,6 +105,53 @@ async function blobUrlFromDataUrl(dataUrl) {
     } catch {
         return dataUrl;
     }
+}
+
+async function generateViaComfyRunpod(apiKey, params, { imageMode = false } = {}) {
+    const base = (clientConfig.proxyPath || '/api/comfy-runpod').replace(/\/$/, '');
+    const payload = {
+        model: params.model,
+        prompt: params.prompt,
+        aspect_ratio: params.aspect_ratio,
+        duration: params.duration,
+        resolution: params.resolution,
+        seed: params.seed,
+    };
+    if (imageMode) {
+        payload.image_url =
+            params.image_url ||
+            params.images_list?.[0] ||
+            (Array.isArray(params.image_urls) ? params.image_urls[0] : undefined);
+    }
+
+    const response = await fetch(`${base}/video`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        let detail = errText.slice(0, 240);
+        try {
+            const parsed = JSON.parse(errText);
+            if (parsed.message) detail = parsed.message;
+        } catch {
+            /* keep slice */
+        }
+        throw new Error(`Comfy RunPod video failed: ${response.status} - ${detail}`);
+    }
+
+    const data = await response.json();
+    const playableUrl = await blobUrlFromDataUrl(data.url);
+    return {
+        url: playableUrl,
+        request_id: data.metadata?.requestId || `comfy-${Date.now()}`,
+        metadata: data.metadata,
+        model: data.model,
+        comfyWorkflow: data.comfyWorkflow,
+        cost: data.cost ?? null,
+    };
 }
 
 async function generateViaVercelGateway(apiKey, params, { imageMode = false } = {}) {
@@ -259,6 +306,9 @@ export async function decomposeLayers(apiKey, params) {
 }
 
 export async function generateVideo(apiKey, params) {
+    if (clientConfig.mode === 'comfy-video') {
+        return generateViaComfyRunpod(apiKey, params, { imageMode: false });
+    }
     if (clientConfig.mode === 'vercel-video') {
         return generateViaVercelGateway(apiKey, params, { imageMode: false });
     }
@@ -288,6 +338,9 @@ export async function generateVideo(apiKey, params) {
 }
 
 export async function generateI2V(apiKey, params) {
+    if (clientConfig.mode === 'comfy-video') {
+        return generateViaComfyRunpod(apiKey, params, { imageMode: true });
+    }
     if (clientConfig.mode === 'vercel-video') {
         return generateViaVercelGateway(apiKey, params, { imageMode: true });
     }
@@ -325,6 +378,9 @@ export async function generateMarketingStudioAd(apiKey, params) {
 }
 
 export async function processV2V(apiKey, params) {
+    if (clientConfig.mode === 'comfy-video') {
+        throw new Error('Video tools (V2V) are not available with ComfyUI on RunPod. Switch to MuAPI.');
+    }
     if (clientConfig.mode === 'vercel-video') {
         throw new Error('Video tools (V2V) are not available with the Vercel AI Gateway provider. Switch to MuAPI.');
     }

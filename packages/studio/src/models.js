@@ -1,4 +1,5 @@
 import { getMediaCapability } from "./modelCapabilities.js";
+import { OWEB_SOL_I2V_MODELS, OWEB_SOL_T2V_MODELS } from "./owebSolModels.js";
 
 // Synced from the canonical Muapi schema_data.json catalog.
 import {
@@ -10235,7 +10236,8 @@ export const t2vModels = [
   }
 ];
 
-export const getVideoModelById = (id) => t2vModels.find(m => m.id === id);
+export const getVideoModelById = (id) =>
+  t2vModels.find((m) => m.id === id) || OWEB_SOL_T2V_MODELS.find((m) => m.id === id);
 
 const getDependentEnumValues = (input, selections = {}) => {
   const values = input?.enum || [];
@@ -27416,7 +27418,8 @@ export const i2vModels = [
 ];
 
 export const getI2IModelById = (id) => i2iModels.find(m => m.id === id);
-export const getI2VModelById = (id) => i2vModels.find(m => m.id === id);
+export const getI2VModelById = (id) =>
+  i2vModels.find((m) => m.id === id) || OWEB_SOL_I2V_MODELS.find((m) => m.id === id);
 
 export const getMaxImagesForI2VModel = (modelId) => {
     const model = getI2VModelById(modelId);
