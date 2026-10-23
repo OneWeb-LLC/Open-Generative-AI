@@ -92,10 +92,21 @@ async function main() {
   for (const key of COPY_KEYS) {
     const env = byKey.get(key);
     if (!env?.value) continue;
+    let value = env.value;
+    let type = env.type === 'encrypted' ? 'encrypted' : 'plain';
+    if (key.includes('GATEWAY') && value.startsWith('eyJ')) {
+      console.warn(
+        `skip ${key}: decrypted value looks like Vercel ciphertext, not a gateway API key (use vck_… from project env GET)`,
+      );
+      continue;
+    }
+    if (key.includes('GATEWAY') && value.startsWith('vck_')) {
+      type = 'sensitive';
+    }
     await upsertEnv(vercel, TARGET_PROJECT, {
       key,
-      value: env.value,
-      type: env.type === 'encrypted' ? 'encrypted' : 'plain',
+      value,
+      type,
       target: env.target?.length ? env.target : ['production', 'preview', 'development'],
       comment: `Synced from ${SOURCE_PROJECT} (${key})`,
     });
