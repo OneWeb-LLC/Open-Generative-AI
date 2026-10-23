@@ -1132,22 +1132,31 @@ export default function VideoStudio({
           videoUrls: uploadedVideoUrls,
           audioUrls: uploadedAudioUrls,
         };
-    return buildVideoCostEstimatePayload({
-      currentModel,
-      selectedModel,
-      modelKind: costEstimateModelKind,
-      modelParameterValues,
-      selectedAr,
-      selectedDuration,
-      selectedResolution,
-      selectedQuality,
-      selectedWorkflowId,
-      workflowMedia,
-      showEffect,
-      selectedEffect,
-      selectedVeoTool,
-      prompt,
-    });
+    return (
+      buildVideoCostEstimatePayload({
+        currentModel,
+        selectedModel,
+        modelKind: costEstimateModelKind,
+        modelParameterValues,
+        selectedAr,
+        selectedDuration,
+        selectedResolution,
+        selectedQuality,
+        selectedWorkflowId,
+        workflowMedia,
+        showEffect,
+        selectedEffect,
+        selectedVeoTool,
+        prompt,
+      }) ?? {
+        model: selectedModel,
+        duration: selectedDuration,
+        resolution: selectedResolution || undefined,
+        aspect_ratio: selectedAr,
+        quality: selectedQuality || undefined,
+        ...(prompt.trim() ? { prompt: prompt.trim() } : {}),
+      }
+    );
   }, [
     getCurrentModel,
     selectedModel,
@@ -3446,6 +3455,14 @@ export default function VideoStudio({
               )}
 
               {/* Duration btn */}
+              <VideoGenerationCostEstimate
+                variant="chip"
+                status={liveCostEstimate.status}
+                label={liveCostEstimate.label}
+                apiProviderId={apiProviderId}
+                copy={copy}
+              />
+
               {groupedConfiguration && (
                 <VideoOptionControl
                   label={selectedWorkflowId === "extend_uploaded_video" ? groupCopy.extensionDuration : copy.dropdowns.duration}
@@ -3579,8 +3596,9 @@ export default function VideoStudio({
               )}
             </PromptControls>
 
-            <div className="flex flex-col items-stretch sm:items-end gap-1 shrink-0">
+            <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
               <VideoGenerationCostEstimate
+                variant="stacked"
                 status={liveCostEstimate.status}
                 label={liveCostEstimate.label}
                 apiProviderId={apiProviderId}
@@ -3589,17 +3607,25 @@ export default function VideoStudio({
               <PromptAction
                 onClick={handleGenerate}
                 disabled={generating || mediaUploading || (selectedTool?.group === "continueGenerated" && !hasContinuationSource) || (selectedVeoTool && !selectedVeoSource)}
+                className="flex-col gap-0.5 py-2.5"
               >
                 {generating ? (
                   <>
                     <span className="animate-spin inline-block text-black">
                       ◌
-                    </span>{" "}
-                    {copy.controls.generating}
+                    </span>
+                    <span>{copy.controls.generating}</span>
                   </>
                 ) : (
                   <>
                     <span>{copy.controls.generate}</span>
+                    <VideoGenerationCostEstimate
+                      variant="button"
+                      status={liveCostEstimate.status}
+                      label={liveCostEstimate.label}
+                      apiProviderId={apiProviderId}
+                      copy={copy}
+                    />
                   </>
                 )}
               </PromptAction>

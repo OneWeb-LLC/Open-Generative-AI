@@ -45,9 +45,7 @@ export function useVideoCostEstimate({
       return undefined;
     }
 
-    setState((prev) =>
-      prev.status === 'ready' ? prev : { status: 'loading', estimate: null, label: null },
-    );
+    setState({ status: 'loading', estimate: null, label: null });
 
     const controller = new AbortController();
     const timer = setTimeout(async () => {
