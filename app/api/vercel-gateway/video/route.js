@@ -9,9 +9,34 @@ import {
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
+const GATEWAY_VIDEO_DOWNLOAD_MAX_BYTES = 250 * 1024 * 1024;
+
+/** Use Node global fetch so serverless bundles do not require optional `undici`. */
+async function downloadGatewayVideo({ url, abortSignal }) {
+  const response = await fetch(url.toString(), { signal: abortSignal });
+  if (!response.ok) {
+    throw new Error(`Failed to download video (${response.status})`);
+  }
+  const buffer = await response.arrayBuffer();
+  if (buffer.byteLength > GATEWAY_VIDEO_DOWNLOAD_MAX_BYTES) {
+    throw new Error('Video download exceeded size limit');
+  }
+  return {
+    data: new Uint8Array(buffer),
+    mediaType: response.headers.get('content-type') ?? undefined,
+  };
+}
+
+function readGatewayApiKey() {
+  const raw =
+    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || '';
+  const trimmed = String(raw).trim();
+  if (!trimmed || trimmed.startsWith('eyJ')) return null;
+  return trimmed;
+}
+
 function createGatewayProvider(request) {
-  const serverKey =
-    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || null;
+  const serverKey = readGatewayApiKey();
   if (serverKey) {
     return createGateway({ apiKey: serverKey });
   }
@@ -83,6 +108,7 @@ export async function POST(request) {
         intervalMs: 5000,
         timeoutMs: Number(process.env.OGI_VERCEL_VIDEO_POLL_TIMEOUT_MS || 600000),
       },
+      download: downloadGatewayVideo,
     });
 
     const video = result.video;

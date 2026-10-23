@@ -63,6 +63,23 @@ async function listProjectEnvs(vercel, projectIdOrName) {
   return res?.envs ?? [];
 }
 
+async function resolveGatewayEnvValue(vercel, projectIdOrName, env) {
+  if (!env?.id) return env?.value ?? null;
+  let value = env.value;
+  if (value && !value.startsWith('eyJ')) return value;
+  try {
+    const detail = await vercel.projects.getProjectEnv({
+      idOrName: projectIdOrName,
+      id: env.id,
+      ...teamFields(),
+    });
+    value = detail?.value ?? value;
+  } catch {
+    /* keep list value */
+  }
+  return value;
+}
+
 async function upsertEnv(vercel, projectIdOrName, entry) {
   await vercel.projects.createProjectEnv({
     idOrName: projectIdOrName,
@@ -91,8 +108,12 @@ async function main() {
   let copied = 0;
   for (const key of COPY_KEYS) {
     const env = byKey.get(key);
-    if (!env?.value) continue;
-    let value = env.value;
+    if (!env?.value && !key.includes('GATEWAY')) continue;
+    let value =
+      key.includes('GATEWAY') && env
+        ? await resolveGatewayEnvValue(vercel, SOURCE_PROJECT, env)
+        : env?.value;
+    if (!value) continue;
     let type = env.type === 'encrypted' ? 'encrypted' : 'plain';
     if (key.includes('GATEWAY') && value.startsWith('eyJ')) {
       console.warn(

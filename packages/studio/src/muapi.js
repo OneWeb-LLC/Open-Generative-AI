@@ -138,7 +138,11 @@ async function generateViaVercelGateway(apiKey, params, { imageMode = false } = 
 
     if (!response.ok) {
         const errText = await response.text();
-        notifyAuthRequired(response.status, errText);
+        const isGatewayAuth =
+            errText.includes('gateway_auth_failed') || errText.includes('AI Gateway auth failed');
+        if (!isGatewayAuth) {
+            notifyAuthRequired(response.status, errText);
+        }
         let detail = errText.slice(0, 200);
         try {
             const parsed = JSON.parse(errText);
