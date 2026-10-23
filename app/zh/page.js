@@ -2,6 +2,7 @@ import MarketingHome from '@/components/marketing/MarketingHome';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { getMarketingCopy } from '@/lib/marketing/copy';
 import { getMarketingAuthState } from '@/lib/marketing/session';
+import { SITE_SHORT_TAGLINE, pageTitle } from '@/lib/ogi/branding';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ const LOCALE = 'zh';
 export async function generateMetadata() {
   const copy = getMarketingCopy(LOCALE);
   return {
-    title: copy.meta.homeTitle,
+    title: pageTitle(SITE_SHORT_TAGLINE),
     description: copy.meta.homeDescription,
   };
 }

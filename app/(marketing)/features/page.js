@@ -2,6 +2,7 @@ import MarketingFeatures from '@/components/marketing/MarketingFeatures';
 import MarketingShell from '@/components/marketing/MarketingShell';
 import { getMarketingCopy } from '@/lib/marketing/copy';
 import { getMarketingAuthState } from '@/lib/marketing/session';
+import { pageTitle } from '@/lib/ogi/branding';
 import { DEFAULT_LOCALE } from '@/lib/locales';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata() {
   const copy = getMarketingCopy(DEFAULT_LOCALE);
   return {
-    title: copy.meta.featuresTitle,
+    title: pageTitle('Features'),
     description: copy.meta.featuresDescription,
   };
 }

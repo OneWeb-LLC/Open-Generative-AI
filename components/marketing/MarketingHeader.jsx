@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BrandLogo from '@/components/BrandLogo';
 import { getOwebAppUrl } from '@/lib/ogi/constants';
 import { loginPath, marketingPath, studioDashboardPath } from '@/lib/marketing/copy';
 
@@ -45,14 +46,8 @@ export default function MarketingHeader({ locale, copy, isAuthenticated }) {
     <header className="sticky top-0 z-50 border-b border-[#dadce0]/80 bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <div className="flex items-center gap-2 min-w-0">
-          <Link href={homeHref} className="flex items-center gap-2 no-underline">
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#1a73e8] to-[#34a853] text-sm font-bold text-white"
-              aria-hidden
-            >
-              OG
-            </span>
-            <span className="truncate text-base font-medium text-[#202124]">{copy.brand}</span>
+          <Link href={homeHref} className="no-underline hover:opacity-90 transition-opacity">
+            <BrandLogo size={36} showName nameClassName="text-base font-medium text-[#202124]" />
           </Link>
         </div>
 

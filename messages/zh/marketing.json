@@ -1,11 +1,8 @@
 {
   "meta": {
-    "homeTitle": "Open Generative AI — 免费 AI 图像与视频工作室",
     "homeDescription": "使用 200+ 模型生成 AI 图像与视频。一个 OWeb 账号、你的 MuAPI 密钥、按工作区隔离的工作室。",
-    "featuresTitle": "功能 — Open Generative AI",
     "featuresDescription": "图像、视频、电影、对口型、智能体与工作流，集于同一创意工作室。"
   },
-  "brand": "Open Generative AI",
   "nav": {
     "features": "功能",
     "studio": "工作室",
@@ -80,7 +77,7 @@
       },
       {
         "title": "OWeb 生态",
-        "body": "Open Generative AI 是按工作区隔离的卫星应用 — 可从 OWeb 启动或直接登录。",
+        "body": "Artemiis One 是按工作区隔离的卫星应用 — 可从 OWeb 启动或直接登录。",
         "bullets": [
           "共享 Supabase 会话 (ao-supabase-auth)",
           "工作区切换与 OWeb 团队一致",
@@ -103,6 +100,8 @@
     "ecosystem": "OWeb 星座应用之一",
     "owebLink": "OWeb",
     "login": "登录",
-    "copyright": "Open Generative AI"
+    "privacy": "隐私政策",
+    "terms": "服务条款",
+    "copyright": "Artemiis One"
   }
 }

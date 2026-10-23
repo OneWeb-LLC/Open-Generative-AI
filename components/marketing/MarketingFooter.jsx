@@ -31,6 +31,16 @@ export default function MarketingFooter({ locale, copy }) {
                   {copy.footer.login}
                 </Link>
               </li>
+              <li>
+                <Link href="/privacy" className="hover:text-[#1a73e8]">
+                  {copy.footer.privacy}
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-[#1a73e8]">
+                  {copy.footer.terms}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

@@ -1,11 +1,8 @@
 {
   "meta": {
-    "homeTitle": "Open Generative AI — Free AI Image & Video Studio",
     "homeDescription": "Generate AI images and videos with 200+ models. One OWeb account, your MuAPI key, workspace-scoped studio.",
-    "featuresTitle": "Features — Open Generative AI",
     "featuresDescription": "Image, video, cinema, lip sync, agents, and workflows in one creative studio."
   },
-  "brand": "Open Generative AI",
   "nav": {
     "features": "Features",
     "studio": "Studio",
@@ -80,7 +77,7 @@
       },
       {
         "title": "OWeb ecosystem",
-        "body": "Open Generative AI is a workspace-scoped satellite app — launch from OWeb or sign in directly.",
+        "body": "Artemiis One is a workspace-scoped satellite app — launch from OWeb or sign in directly.",
         "bullets": [
           "Shared Supabase session (ao-supabase-auth)",
           "Workspace switcher matches your OWeb teams",
@@ -103,6 +100,8 @@
     "ecosystem": "Part of the OWeb constellation",
     "owebLink": "OWeb",
     "login": "Sign in",
-    "copyright": "Open Generative AI"
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "Artemiis One"
   }
 }
