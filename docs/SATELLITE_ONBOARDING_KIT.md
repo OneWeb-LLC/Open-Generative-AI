@@ -6,7 +6,7 @@ This repo is a **workspace-scoped** OWeb constellation satellite (`app_id`: `ope
 
 - One OS Supabase project `ebjzdcnphkfpxfldnatm` (auth at `https://auth.oweb.one`)
 - OWeb control plane with centralized SSO redeem (`POST /api/v1/ecosystem/redeem-launch-token`)
-- Register the app in OWeb `ecosystem-apps.ts`: `activationScope: "workspace"`, production `launchUrl`
+- Register the app in OWeb `ecosystem-apps.ts`: `activationScope: "workspace"`, production `launchUrl` **`https://artemiis.one`**
 
 ## Deploy steps
 

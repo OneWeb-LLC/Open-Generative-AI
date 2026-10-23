@@ -26,6 +26,8 @@ assert(
 );
 
 assert(existsSync(resolve(root, 'docs/SATELLITE.md')), 'missing docs/SATELLITE.md');
+const satelliteDoc = readFileSync(resolve(root, 'docs/SATELLITE.md'), 'utf8');
+assert(satelliteDoc.includes('https://artemiis.one'), 'SATELLITE.md must document production origin artemiis.one');
 assert(
   existsSync(resolve(root, 'supabase/migrations/20261007220000_ogi_profiles_isolation.sql')),
   'missing ogi_profiles migration',

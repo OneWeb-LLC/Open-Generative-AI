@@ -12,7 +12,7 @@
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | yes | Anon/publishable key |
 | `NEXT_PUBLIC_OWEB_APP_URL` | yes | `https://oweb.one` (Continue with OWeb) |
 | `NEXT_PUBLIC_OWEB_PLATFORM_API_URL` | yes | `https://oweb.one/api/v1` — centralized SSO redeem |
-| `NEXT_PUBLIC_APP_URL` | yes | This satellite origin (Vercel production URL) |
+| `NEXT_PUBLIC_APP_URL` | yes | Satellite origin — production **`https://artemiis.one`** (`APP_URL` should match) |
 
 ## Recommended
 
