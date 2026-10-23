@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getMuapiApiKeyFromCookies } from '@/lib/ogi/muapi-api-key-cookies.server';
 import AgentChatClient from "./AgentChatClient";
 import { pageTitle } from '@/lib/ogi/branding';
 
@@ -70,8 +70,7 @@ async function fetchUserData(apiKey) {
 
 export default async function AgentPage({ params }) {
   const { agent_id } = await params;
-  const cookieStore = await cookies();
-  const apiKey = cookieStore.get("muapi_key")?.value;
+  const apiKey = await getMuapiApiKeyFromCookies();
 
   console.log(`[AgentPage] Loading page for agent: ${agent_id}, hasKey: ${!!apiKey}`);
 

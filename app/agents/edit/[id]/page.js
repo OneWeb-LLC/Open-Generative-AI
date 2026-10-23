@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getMuapiApiKeyFromCookies } from '@/lib/ogi/muapi-api-key-cookies.server';
 import AgentEditClient from "./AgentEditClient";
 
 const BASE_URL = 'https://api.muapi.ai';
@@ -19,8 +19,7 @@ async function fetchUserData(apiKey) {
 
 export default async function EditAgentPage({ params }) {
   const { id } = await params; // although we don't use id on server here, it's used by useParams in client
-  const cookieStore = await cookies();
-  const apiKey = cookieStore.get("muapi_key")?.value;
+  const apiKey = await getMuapiApiKeyFromCookies();
 
   const userData = await fetchUserData(apiKey);
 

@@ -15,6 +15,10 @@ import ApiProviderSelect from './ApiProviderSelect';
 import { getCommonCopy, getLocaleConfig, localizeStudioPath } from '@/lib/locales';
 import { createClient } from '@/lib/supabase/client';
 import { getOwebAppUrl, muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
+import {
+  PLATFORM_MANAGED_MUAPI_KEY,
+  isPlatformManagedMuapiKey,
+} from '@/lib/ogi/muapi-client';
 import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 import TeamPanel from '@/components/TeamPanel';
@@ -300,6 +304,15 @@ const STORAGE_KEY = 'muapi_key';
 const NOTIFICATIONS_STORAGE_KEY = 'open_gen_notifications_v1';
 const MAX_VISIBLE_NOTIFICATIONS = 3;
 
+function syncMuapiKeyCookie(key) {
+  if (typeof document === 'undefined') return;
+  if (!key || isPlatformManagedMuapiKey(key) || isOwebHostedClientKey(key)) {
+    document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    return;
+  }
+  document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+}
+
 const loadStoredNotifications = () => {
   if (typeof window === 'undefined') return [];
 
@@ -339,6 +352,7 @@ export default function StandaloneShell({
   teamPath = '/studio/team',
   apiProviders = [],
   defaultProviderId = 'muapi-proxy',
+  platformMuapiKeyConfigured = false,
   owebBillingEnabled = false,
 }) {
   const params = useParams();
@@ -679,13 +693,13 @@ export default function StandaloneShell({
       const legacy = !stored && !userId ? localStorage.getItem(STORAGE_KEY) : null;
       const hostedKey =
         owebBillingEnabled && userId ? OWEB_HOSTED_CLIENT_KEY : null;
-      const key = stored || legacy || hostedKey;
+      const platformKey =
+        platformMuapiKeyConfigured ? PLATFORM_MANAGED_MUAPI_KEY : null;
+      const key = stored || legacy || hostedKey || platformKey;
       if (key) {
         setApiKey(key);
         fetchBalance(key);
-        if (!isOwebHostedClientKey(key)) {
-          document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
-        }
+        syncMuapiKeyCookie(key);
         if (legacy && userId) {
           await saveClientSecret(storageKey, legacy);
           localStorage.removeItem(STORAGE_KEY);
@@ -699,6 +713,7 @@ export default function StandaloneShell({
     defaultProviderId,
     apiProviders,
     userId,
+    platformMuapiKeyConfigured,
     owebBillingEnabled,
   ]);
 
@@ -738,7 +753,7 @@ export default function StandaloneShell({
       }
       setApiKey(key);
       fetchBalance(key);
-      document.cookie = `muapi_key=${key}; path=/; max-age=31536000; SameSite=Lax`;
+      syncMuapiKeyCookie(key);
     },
     [fetchBalance, storageKey, providerId, providerStorageKey, syncClientForProvider],
   );
@@ -749,12 +764,15 @@ export default function StandaloneShell({
     if (owebBillingEnabled && userId) {
       setApiKey(OWEB_HOSTED_CLIENT_KEY);
       void fetchBalance(OWEB_HOSTED_CLIENT_KEY);
+    } else if (platformMuapiKeyConfigured) {
+      setApiKey(PLATFORM_MANAGED_MUAPI_KEY);
+      void fetchBalance(PLATFORM_MANAGED_MUAPI_KEY);
     } else {
       setApiKey(null);
       setBalance(null);
     }
-    document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  }, [storageKey, userId, owebBillingEnabled, fetchBalance]);
+    syncMuapiKeyCookie(null);
+  }, [storageKey, userId, platformMuapiKeyConfigured, owebBillingEnabled, fetchBalance]);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -784,7 +802,11 @@ export default function StandaloneShell({
       const isRelative = config.url.startsWith('/') || !config.url.startsWith('http');
       const isInternalProxy = config.url.includes('/api/app') || config.url.includes('/api/workflow') || config.url.includes('/api/agents') || config.url.includes('/api/api') || config.url.includes('/api/v1');
 
-      if ((isRelative || isInternalProxy) && !isOwebHostedClientKey(apiKey)) {
+      if (
+        (isRelative || isInternalProxy) &&
+        !isPlatformManagedMuapiKey(apiKey) &&
+        !isOwebHostedClientKey(apiKey)
+      ) {
         config.headers['x-api-key'] = apiKey;
       }
       
@@ -848,7 +870,7 @@ export default function StandaloneShell({
   );
 
   if (!apiKey) {
-    if (owebBillingEnabled && userId) {
+    if ((owebBillingEnabled && userId) || platformMuapiKeyConfigured) {
       return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center">
           <div className="animate-spin text-[#22d3ee] text-3xl">◌</div>
@@ -1576,7 +1598,9 @@ export default function StandaloneShell({
                     {copy.settingsModal.activeApiKey}
                   </label>
                   <div className="text-[13px] font-mono text-white/80">
-                    {apiKey?.slice(0, 8)}••••••••••••••••
+                    {isPlatformManagedMuapiKey(apiKey)
+                      ? (copy.settingsModal.platformApiKey || 'Managed on server (MUAPI_KEY)')
+                      : `${apiKey?.slice(0, 8)}••••••••••••••••`}
                   </div>
                 </div>
               )}
@@ -1590,7 +1614,8 @@ export default function StandaloneShell({
             )}
 
             <div className="flex gap-3">
-              {!(owebBillingEnabled && isOwebHostedClientKey(apiKey)) && (
+              {!(owebBillingEnabled && isOwebHostedClientKey(apiKey)) &&
+                !isPlatformManagedMuapiKey(apiKey) && (
                 <button
                   onClick={handleKeyChange}
                   className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"

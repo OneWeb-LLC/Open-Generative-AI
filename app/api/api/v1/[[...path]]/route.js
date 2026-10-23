@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
+import { resolveMuapiApiKeyFromRequest } from '@/lib/ogi/muapi-api-key.server';
 
 const MUAPI_BASE = 'https://api.muapi.ai';
-
-function getApiKey(request) {
-    const headerKey = request.headers.get('x-api-key');
-    if (headerKey) return headerKey;
-    // Cookie-based auth removed for security (CWE-522)
-    return null;
-}
 
 function cleanHeaders(request) {
     const headers = new Headers(request.headers);
@@ -28,7 +22,7 @@ export async function GET(request, { params }) {
     const targetUrl = `${MUAPI_BASE}/api/v1/${path}${search}`;
 
     const headers = cleanHeaders(request);
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
 
     // NOTE: credential logging removed for security (CWE-200)
     if (apiKey) headers.set('x-api-key', apiKey);
@@ -51,7 +45,7 @@ export async function POST(request, { params }) {
     const targetUrl = `${MUAPI_BASE}/api/v1/${path}${search}`;
 
     const headers = cleanHeaders(request);
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     if (apiKey) headers.set('x-api-key', apiKey);
 
     try {

@@ -1,4 +1,5 @@
 import StandaloneShell from '@/components/StandaloneShell';
+import { getStudioShellProps } from '@/lib/ogi/studio-shell-props.server';
 
 import { pageTitle } from '@/lib/ogi/branding';
 
@@ -7,5 +8,5 @@ export const metadata = {
 };
 
 export default function WorkflowTabPage() {
-  return <StandaloneShell />;
+  return <StandaloneShell {...getStudioShellProps()} />;
 }

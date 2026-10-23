@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server';
+import { resolveMuapiApiKeyFromRequest } from '@/lib/ogi/muapi-api-key.server';
 
 const MUAPI_BASE = 'https://api.muapi.ai';
-
-function getApiKey(request) {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7).trim();
-        if (token) return token;
-    }
-    const headerKey = request.headers.get('x-api-key');
-    if (headerKey && headerKey.trim()) return headerKey.trim();
-    return null;
-}
 
 function cleanHeaders(request) {
     const headers = new Headers(request.headers);
@@ -23,7 +13,7 @@ function cleanHeaders(request) {
 }
 
 export async function GET(request) {
-    const apiKey = getApiKey(request);
+    const apiKey = resolveMuapiApiKeyFromRequest(request);
     if (!apiKey) {
         return NextResponse.json({ error: 'Unauthorized: Missing API key' }, { status: 401 });
     }

@@ -35,6 +35,7 @@ Wallet balance: satellite `GET /api/ogi/wallet` reads `ao_orgs.credits_balance` 
 
 | Variable | Client | Purpose |
 |----------|--------|---------|
+| `MUAPI_KEY` | no | Shared MuAPI access key for your deployment (skips studio BYOK modal; injected on server proxies) |
 | `MUAPI_UPSTREAM` | no | Upstream for `/api/muapi` proxy (default `https://api.muapi.ai`) |
 | `OGI_OWEB_BACKEND_API_UPSTREAM` | no | Optional OWeb `BACKEND_API_URL` mirror → **OWeb backend API** in UI |
 | `NEXT_PUBLIC_OGI_DEFAULT_API_PROVIDER` | yes | Default selection (`muapi-proxy`, `muapi-direct`, …) |
@@ -48,7 +49,7 @@ Sync Supabase/OWeb public env from the **oweb** Vercel project: `VERCEL_TOKEN=�
 
 - **No `SUPABASE_SERVICE_ROLE_KEY`** — SSO launch tokens are redeemed via OWeb `POST /api/v1/ecosystem/redeem-launch-token` (satellite server calls OWeb; OWeb uses service role centrally).
 - No second Supabase project
-- No satellite MuAPI platform key when OWeb billing is on (OWeb hosts `MUAPI_KEY` for metering). BYOK remains available when billing flag is off.
+- With OWeb billing on, studio uses the workspace OneCredits wallet (OWeb hosts metering). With billing off, optional server `MUAPI_KEY` or BYOK per user per workspace in browser storage.
 - No Clerk / app-local password store
 
 Apply DB migrations in `supabase/migrations/` on One OS before profile upsert and workspace preferences in production.

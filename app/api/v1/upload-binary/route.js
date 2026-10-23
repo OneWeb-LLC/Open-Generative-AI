@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { validateUploadProxyTarget, getApiKeyFromRequest, isBlockedFileType } from '../../../../src/lib/uploadProxyTarget';
+import { validateUploadProxyTarget, isBlockedFileType } from '../../../../src/lib/uploadProxyTarget';
+import { resolveMuapiApiKeyFromRequest } from '@/lib/ogi/muapi-api-key.server';
 
 export async function POST(request) {
     try {
-        const apiKey = getApiKeyFromRequest(request);
+        const apiKey = resolveMuapiApiKeyFromRequest(request);
         if (!apiKey) {
             return NextResponse.json({ error: 'Unauthorized: Missing API key' }, { status: 401 });
         }

@@ -10,8 +10,13 @@ import { getModelMediaCapabilities, mapReferenceParams } from './modelCapabiliti
 import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
 import { buildGenerationMetadata } from './utils/generationMetadata.js';
-import { isOwebHostedClientKey, muapiKeyHeaders } from './muapiAuth.js';
+import {
+    isOwebHostedClientKey,
+    isPlatformManagedMuapiKey,
+    muapiKeyHeaders,
+} from './muapiAuth.js';
 
+export { PLATFORM_MANAGED_MUAPI_KEY, isPlatformManagedMuapiKey } from './muapiAuth.js';
 export { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from './muapiAuth.js';
 
 /** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
@@ -632,7 +637,7 @@ export function uploadFile(apiKey, file, onProgress) {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
-        if (!isOwebHostedClientKey(apiKey)) {
+        if (apiKey && !isPlatformManagedMuapiKey(apiKey) && !isOwebHostedClientKey(apiKey)) {
             xhr.setRequestHeader('x-api-key', apiKey);
         }
         xhr.timeout = FILE_UPLOAD_TIMEOUT_MS;
@@ -1109,7 +1114,7 @@ export async function handleProxyRequest(prefix, path, method, headers, body, ap
     finalHeaders.delete('connection');
     finalHeaders.delete('content-length'); // Let fetch recalculate this for safety
 
-    if (apiKey && !isOwebHostedClientKey(apiKey)) {
+    if (apiKey && !isPlatformManagedMuapiKey(apiKey) && !isOwebHostedClientKey(apiKey)) {
         finalHeaders.set('x-api-key', apiKey);
     }
 
