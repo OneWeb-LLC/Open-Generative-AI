@@ -28,7 +28,7 @@ CREATE POLICY ogi_workspace_preferences_member ON public.ogi_workspace_preferenc
       SELECT 1
       FROM public.ao_org_members AS m
       WHERE m.org_id = ogi_workspace_preferences.workspace_id
-        AND m.user_id = (SELECT auth.uid())
+        AND m.user_id = (SELECT auth.uid()::text)
         AND m.left_at IS NULL
     )
   )
@@ -38,7 +38,7 @@ CREATE POLICY ogi_workspace_preferences_member ON public.ogi_workspace_preferenc
       SELECT 1
       FROM public.ao_org_members AS m
       WHERE m.org_id = ogi_workspace_preferences.workspace_id
-        AND m.user_id = (SELECT auth.uid())
+        AND m.user_id = (SELECT auth.uid()::text)
         AND m.left_at IS NULL
     )
   );
