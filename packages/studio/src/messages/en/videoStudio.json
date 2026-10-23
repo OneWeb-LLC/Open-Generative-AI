@@ -50,6 +50,15 @@
     "generate": "Generate",
     "generating": "Generating..."
   },
+  "costEstimate": {
+    "label": "Est.",
+    "loading": "Estimating…",
+    "unavailable": "—",
+    "unavailableTitle": "No cost estimate for {provider} with these settings",
+    "readyTitle": "Estimated cost via {provider}: {amount}",
+    "unknownProvider": "API provider",
+    "chipTitle": "Estimated generation cost"
+  },
   "extend": {
     "continuingGeneration": "Continuing the previous {family} generation"
   },
