@@ -126,15 +126,22 @@ export async function POST(request) {
     });
   } catch (error) {
     console.error('[vercel-gateway/video]', { gatewayModel, muapiModelId, error });
+    const authFailed =
+      error?.statusCode === 401 ||
+      error?.type === 'authentication_error' ||
+      String(error?.message || '').includes('authentication');
+    const status = authFailed ? 401 : 502;
     return NextResponse.json(
       {
-        error: 'generation_failed',
-        message: error?.message || 'Video generation failed',
+        error: authFailed ? 'gateway_auth_failed' : 'generation_failed',
+        message: authFailed
+          ? 'AI Gateway auth failed. Set a valid AI_GATEWAY_API_KEY on this Vercel project (not your MuAPI workspace key in Settings).'
+          : error?.message || 'Video generation failed',
         gatewayModel,
         muapiModelId,
         cause: error?.cause?.message || error?.data?.error?.message || null,
       },
-      { status: 502 },
+      { status },
     );
   }
 }

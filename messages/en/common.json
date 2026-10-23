@@ -41,6 +41,7 @@
     "title": "Settings",
     "subtitle": "Manage your AI studio preferences and authentication.",
     "activeApiKey": "Active API Key",
+    "vercelGatewayKeyHint": "Vercel AI Gateway (video) uses the server AI_GATEWAY_API_KEY on this Vercel project — not the MuAPI workspace key below. Leave this key as-is unless you use MuAPI (satellite proxy).",
     "changeKey": "Change Key",
     "close": "Close"
   },

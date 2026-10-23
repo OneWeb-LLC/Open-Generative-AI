@@ -1301,6 +1301,11 @@ export default function StandaloneShell({
                   }}
                 />
               )}
+              {providerId === 'vercel-ai-gateway' && copy.settingsModal.vercelGatewayKeyHint ? (
+                <p className="text-xs text-[#d9ff00]/80 leading-relaxed border border-[#d9ff00]/20 bg-[#d9ff00]/5 rounded-md px-3 py-2">
+                  {copy.settingsModal.vercelGatewayKeyHint}
+                </p>
+              ) : null}
               <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
                 <label className="block text-xs font-bold text-white/30 mb-2">
                    {copy.settingsModal.activeApiKey}
