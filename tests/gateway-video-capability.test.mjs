@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  formatGatewayVideoPriceSuffix,
+  resolveGatewayVideoModelStrict,
+} from '../lib/ogi/gateway-video-capability.js';
+
+test('resolveGatewayVideoModelStrict maps studio catalog ids', () => {
+  assert.equal(
+    resolveGatewayVideoModelStrict('veo3.1-text-to-video'),
+    'google/veo-3.1-generate-001',
+  );
+  assert.equal(
+    resolveGatewayVideoModelStrict('grok-imagine-image-to-video'),
+    'spacexai/grok-imagine-video',
+  );
+  assert.equal(
+    resolveGatewayVideoModelStrict('vercel-grok-video-t2v'),
+    'spacexai/grok-imagine-video',
+  );
+  assert.equal(resolveGatewayVideoModelStrict('seedance-lite-t2v'), null);
+});
+
+test('formatGatewayVideoPriceSuffix renders compact USD label', () => {
+  assert.equal(
+    formatGatewayVideoPriceSuffix({ input: '0', output: '0.0125' }),
+    ' · $0.01/unit',
+  );
+  assert.equal(formatGatewayVideoPriceSuffix(null), null);
+});

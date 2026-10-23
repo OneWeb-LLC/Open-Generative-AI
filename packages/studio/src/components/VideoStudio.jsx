@@ -43,6 +43,12 @@ import {
   isVideoPickerEntryVisibleForApiProvider,
   isVideoModelVisibleForApiProvider,
 } from "../videoGenerativeProviders.js";
+import {
+  formatVideoPickerLabelWithPrice,
+  pickerEntryGatewaySlug,
+  resolveStudioModelGatewaySlug,
+} from "../utils/gatewayVideoPickerLabels.js";
+import { buildGatewayApiPickerEntry } from "../vercelGatewayVideoModels.js";
 import { getSeedanceEndpointResolution, getSeedanceToolConfiguration } from "../seedanceModels.js";
 import { getVeoToolConfiguration } from "../veoModels.js";
 import { getGroupedVideoConfiguration, getGroupedVideoCopyKey, getGroupedVideoVariantOptions } from "../groupedVideoModels.js";
@@ -456,17 +462,41 @@ function seedanceToolLabel(tool, copy, includeAction = false) {
   ].filter(Boolean).join(" · ");
 }
 
-function ModelDropdown({ selectedModel, onSelect, onClose, copy = en, apiProviderId = "muapi-proxy" }) {
+function ModelDropdown({
+  selectedModel,
+  onSelect,
+  onClose,
+  copy = en,
+  apiProviderId = "muapi-proxy",
+  gatewayPricingByGatewayModelId = {},
+  dynamicGatewayPickerEntries = [],
+}) {
   const [search, setSearch] = useState("");
   const selectedEntry = videoModelPickerEntryByVariantId.get(selectedModel);
   const selectedModelProvider = selectedEntry?.family.provider || "all";
-  const providerVisibleEntries = useMemo(
-    () =>
-      videoModelPickerEntries.filter((entry) =>
-        isVideoPickerEntryVisibleForApiProvider(entry, apiProviderId),
-      ),
-    [apiProviderId],
-  );
+  const providerVisibleEntries = useMemo(() => {
+    const base = videoModelPickerEntries.filter((entry) =>
+      isVideoPickerEntryVisibleForApiProvider(entry, apiProviderId),
+    );
+    if (apiProviderId !== "vercel-ai-gateway" || dynamicGatewayPickerEntries.length === 0) {
+      return base;
+    }
+    const knownSlugs = new Set();
+    for (const entry of base) {
+      const slug = pickerEntryGatewaySlug(entry, selectedModel, gatewayPricingByGatewayModelId);
+      if (slug) knownSlugs.add(slug);
+    }
+    const extras = dynamicGatewayPickerEntries.filter((entry) => {
+      const slug = pickerEntryGatewaySlug(entry, selectedModel, gatewayPricingByGatewayModelId);
+      return slug && !knownSlugs.has(slug);
+    });
+    return [...base, ...extras];
+  }, [
+    apiProviderId,
+    dynamicGatewayPickerEntries,
+    gatewayPricingByGatewayModelId,
+    selectedModel,
+  ]);
   const modelCategories = [
     {
       id: "all",
@@ -586,7 +616,14 @@ function ModelDropdown({ selectedModel, onSelect, onClose, copy = en, apiProvide
     return "bg-primary/10 text-primary border-primary/10";
   };
 
-  const renderItem = (entry, label = entry.name) => {
+  const labelForEntry = (entry) => {
+    const base = entry.name;
+    if (apiProviderId !== "vercel-ai-gateway") return base;
+    const slug = pickerEntryGatewaySlug(entry, selectedModel, gatewayPricingByGatewayModelId);
+    return formatVideoPickerLabelWithPrice(base, slug, gatewayPricingByGatewayModelId);
+  };
+
+  const renderItem = (entry, label = labelForEntry(entry)) => {
     const { family } = entry;
     const isSelected = selectedEntry === entry;
     return (
@@ -812,6 +849,36 @@ export default function VideoStudio({
   useEffect(() => {
     migrateLegacyPersistKey(LEGACY_PERSIST_KEY, PERSIST_KEY);
   }, [PERSIST_KEY]);
+
+  const [gatewayPricingByGatewayModelId, setGatewayPricingByGatewayModelId] = useState({});
+  const [dynamicGatewayPickerEntries, setDynamicGatewayPickerEntries] = useState([]);
+  useEffect(() => {
+    if (apiProviderId !== "vercel-ai-gateway") {
+      setGatewayPricingByGatewayModelId({});
+      setDynamicGatewayPickerEntries([]);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/vercel-gateway/models");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled) {
+          setGatewayPricingByGatewayModelId(data.pricingByGatewayModelId || {});
+          const dynamic = (data.gatewayVideoModels || []).map((model) =>
+            buildGatewayApiPickerEntry(model),
+          );
+          setDynamicGatewayPickerEntries(dynamic);
+        }
+      } catch {
+        /* pricing is optional UI sugar */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiProviderId]);
 
   // ── generation state ──
   const [imageMode, setImageMode] = useState(false); // i2v
@@ -1112,7 +1179,7 @@ export default function VideoStudio({
     ? getCompatibleContinuationSources(selectedModel, history) : [],
   [selectedModel, selectedVeoTool, history]);
   const selectedVeoSource = veoSources.find((entry) => entry.requestId === selectedVeoSourceId) || veoSources[0];
-  const selectedPickerLabel = selectedTool
+  const selectedPickerBaseLabel = selectedTool
     ? seedanceToolLabel(selectedTool, copy, true)
     : selectedVeoTool ? copy.veo.toolNames[selectedVeoTool.key]
     : selectedPickerEntry?.name || selectedFamily.name;
@@ -1185,6 +1252,15 @@ export default function VideoStudio({
     params: costEstimateParams,
     freeLabel: copy.gallery.costUnknown,
   });
+
+  const selectedPickerLabel =
+    apiProviderId === "vercel-ai-gateway"
+      ? formatVideoPickerLabelWithPrice(
+          selectedPickerBaseLabel,
+          resolveStudioModelGatewaySlug(selectedVariant?.model),
+          gatewayPricingByGatewayModelId,
+        )
+      : selectedPickerBaseLabel;
 
   const getSelectionPlan = useCallback((options = {}) => planGroupedVideoSelection({
     familyId: selectedFamilyId,
@@ -3177,6 +3253,8 @@ export default function VideoStudio({
                       onClose={() => setOpenDropdown(null)}
                       copy={copy}
                       apiProviderId={apiProviderId}
+                      gatewayPricingByGatewayModelId={gatewayPricingByGatewayModelId}
+                      dynamicGatewayPickerEntries={dynamicGatewayPickerEntries}
                     />
                   </PromptPopover>
                 )}

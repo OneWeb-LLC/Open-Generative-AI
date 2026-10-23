@@ -156,12 +156,14 @@ async function generateViaComfyRunpod(apiKey, params, { imageMode = false } = {}
 
 async function generateViaVercelGateway(apiKey, params, { imageMode = false } = {}) {
     const base = (clientConfig.proxyPath || '/api/vercel-gateway').replace(/\/$/, '');
+    const modelInfo = imageMode ? getI2VModelById(params.model) : getVideoModelById(params.model);
     const payload = {
         model: params.model,
         prompt: params.prompt,
         aspect_ratio: params.aspect_ratio,
         duration: params.duration,
         resolution: params.resolution,
+        ...(modelInfo?.gatewayModel ? { gatewayModel: modelInfo.gatewayModel } : {}),
     };
     if (imageMode) {
         payload.image_url =
