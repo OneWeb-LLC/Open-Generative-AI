@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "homeTitle": "Open Generative AI — Free AI Image & Video Studio",
+    "homeDescription": "Generate AI images and videos with 200+ models. One OWeb account, your MuAPI key, workspace-scoped studio.",
+    "featuresTitle": "Features — Open Generative AI",
+    "featuresDescription": "Image, video, cinema, lip sync, agents, and workflows in one creative studio."
+  },
+  "brand": "Open Generative AI",
+  "nav": {
+    "features": "Features",
+    "studio": "Studio",
+    "signIn": "Sign in",
+    "openDashboard": "Open dashboard",
+    "getStarted": "Get started"
+  },
+  "home": {
+    "eyebrow": "OWeb satellite · OneID",
+    "headline": "Create with AI, from image to cinema",
+    "subhead": "A full creative studio in your browser — Flux, Kling, Veo, Wan, and 200+ models. Same sign-in as OWeb. Bring your own MuAPI key.",
+    "primaryCta": "Open studio",
+    "secondaryCta": "See features",
+    "trustLine": "Workspace-scoped · BYOK · auth.oweb.one"
+  },
+  "pillars": {
+    "title": "Everything in one workspace",
+    "items": [
+      {
+        "title": "Image & layers",
+        "body": "Generate, edit, and composite with modern diffusion and editing models."
+      },
+      {
+        "title": "Video & cinema",
+        "body": "Text-to-video, image-to-video, motion control, and cinematic shots."
+      },
+      {
+        "title": "Voice & sync",
+        "body": "Lip sync, audio tools, and marketing-ready ad variations."
+      },
+      {
+        "title": "Agents & workflows",
+        "body": "Automate multi-step creative pipelines without leaving the studio."
+      }
+    ]
+  },
+  "steps": {
+    "title": "Start in minutes",
+    "items": [
+      {
+        "title": "Sign in with OWeb",
+        "body": "Use your existing OneID — no second password to remember."
+      },
+      {
+        "title": "Add your MuAPI key",
+        "body": "Keys stay in your browser per workspace. You control spend and access."
+      },
+      {
+        "title": "Create in the studio",
+        "body": "Pick a tool tab, choose a model, and generate — results stay in your session."
+      }
+    ]
+  },
+  "cta": {
+    "title": "Ready to create?",
+    "body": "Open the studio dashboard or sign in to sync your OWeb workspace.",
+    "signedIn": "Continue where you left off in the studio.",
+    "signedOut": "Sign in with the same account you use on OWeb."
+  },
+  "featuresPage": {
+    "headline": "Built for serious creative work",
+    "subhead": "Tab-based studios share one shell, one API key scope, and one OWeb identity.",
+    "sections": [
+      {
+        "title": "Studios",
+        "body": "Dedicated surfaces for image, video, audio, clipping, lip sync, cinema, marketing ads, AI influencer, design agent, and more.",
+        "bullets": [
+          "200+ models across providers",
+          "Consistent controls and history per tab",
+          "Drag-and-drop media into any studio"
+        ]
+      },
+      {
+        "title": "OWeb ecosystem",
+        "body": "Open Generative AI is a workspace-scoped satellite app — launch from OWeb or sign in directly.",
+        "bullets": [
+          "Shared Supabase session (ao-supabase-auth)",
+          "Workspace switcher matches your OWeb teams",
+          "SSO launch tokens via centralized redeem"
+        ]
+      },
+      {
+        "title": "Privacy & keys",
+        "body": "Generation routes through MuAPI with your key; optional local and gateway providers where configured.",
+        "bullets": [
+          "BYOK stored per user and workspace",
+          "No service role on the satellite",
+          "Row-level security on profile data"
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "product": "Product",
+    "ecosystem": "Part of the OWeb constellation",
+    "owebLink": "OWeb",
+    "login": "Sign in",
+    "copyright": "Open Generative AI"
+  }
+}

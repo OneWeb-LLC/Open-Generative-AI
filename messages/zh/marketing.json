@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "homeTitle": "Open Generative AI — 免费 AI 图像与视频工作室",
+    "homeDescription": "使用 200+ 模型生成 AI 图像与视频。一个 OWeb 账号、你的 MuAPI 密钥、按工作区隔离的工作室。",
+    "featuresTitle": "功能 — Open Generative AI",
+    "featuresDescription": "图像、视频、电影、对口型、智能体与工作流，集于同一创意工作室。"
+  },
+  "brand": "Open Generative AI",
+  "nav": {
+    "features": "功能",
+    "studio": "工作室",
+    "signIn": "登录",
+    "openDashboard": "打开控制台",
+    "getStarted": "开始使用"
+  },
+  "home": {
+    "eyebrow": "OWeb 卫星应用 · OneID",
+    "headline": "用 AI 创作，从图像到电影",
+    "subhead": "浏览器中的完整创意工作室 — Flux、Kling、Veo、Wan 及 200+ 模型。与 OWeb 同一登录。自备 MuAPI 密钥。",
+    "primaryCta": "打开工作室",
+    "secondaryCta": "查看功能",
+    "trustLine": "工作区隔离 · BYOK · auth.oweb.one"
+  },
+  "pillars": {
+    "title": "一个工作区，涵盖全流程",
+    "items": [
+      {
+        "title": "图像与图层",
+        "body": "使用现代扩散与编辑模型生成、编辑与合成。"
+      },
+      {
+        "title": "视频与电影",
+        "body": "文生视频、图生视频、动作控制与电影级镜头。"
+      },
+      {
+        "title": "语音与同步",
+        "body": "对口型、音频工具与营销广告变体。"
+      },
+      {
+        "title": "智能体与工作流",
+        "body": "无需离开工作室即可自动化多步创意流程。"
+      }
+    ]
+  },
+  "steps": {
+    "title": "几分钟即可开始",
+    "items": [
+      {
+        "title": "使用 OWeb 登录",
+        "body": "使用现有 OneID — 无需记住第二套密码。"
+      },
+      {
+        "title": "添加 MuAPI 密钥",
+        "body": "密钥按工作区保存在浏览器中，由你控制费用与访问。"
+      },
+      {
+        "title": "在工作室中创作",
+        "body": "选择工具标签与模型即可生成 — 结果保留在你的会话中。"
+      }
+    ]
+  },
+  "cta": {
+    "title": "准备好创作了吗？",
+    "body": "打开工作室控制台，或登录以同步 OWeb 工作区。",
+    "signedIn": "在工作室中继续上次的工作。",
+    "signedOut": "使用与 OWeb 相同的账号登录。"
+  },
+  "featuresPage": {
+    "headline": "为专业创意工作而设计",
+    "subhead": "各标签工作室共享同一外壳、同一 API 密钥范围与同一 OWeb 身份。",
+    "sections": [
+      {
+        "title": "工作室",
+        "body": "图像、视频、音频、剪辑、对口型、电影、营销广告、AI 网红、设计智能体等专用界面。",
+        "bullets": [
+          "跨提供商 200+ 模型",
+          "各标签一致的控制与历史",
+          "拖放媒体到任意工作室"
+        ]
+      },
+      {
+        "title": "OWeb 生态",
+        "body": "Open Generative AI 是按工作区隔离的卫星应用 — 可从 OWeb 启动或直接登录。",
+        "bullets": [
+          "共享 Supabase 会话 (ao-supabase-auth)",
+          "工作区切换与 OWeb 团队一致",
+          "通过集中 redeem 的 SSO 启动令牌"
+        ]
+      },
+      {
+        "title": "隐私与密钥",
+        "body": "生成通过 MuAPI 与你的密钥路由；在配置处可选用本地与网关提供商。",
+        "bullets": [
+          "BYOK 按用户与工作区存储",
+          "卫星端无 service role",
+          "配置数据的行级安全"
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "product": "产品",
+    "ecosystem": "OWeb 星座应用之一",
+    "owebLink": "OWeb",
+    "login": "登录",
+    "copyright": "Open Generative AI"
+  }
+}
