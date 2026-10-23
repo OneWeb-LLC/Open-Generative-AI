@@ -11,6 +11,10 @@ test('resolveGatewayVideoModel maps Kling 3 MuAPI ids to gateway slugs', async (
     resolveGatewayVideoModel('kling-v3.0-standard-image-to-video'),
     'klingai/kling-v3.0-i2v',
   );
+  assert.equal(
+    resolveGatewayVideoModel('veo3.1-fast-text-to-video'),
+    'google/veo-3.1-fast-generate-001',
+  );
 });
 
 test('normalizeGatewayResolution converts studio labels to WxH', async () => {
