@@ -9,9 +9,16 @@ import {
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
+function readGatewayApiKey() {
+  const raw =
+    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || '';
+  const trimmed = String(raw).trim();
+  if (!trimmed || trimmed.startsWith('eyJ')) return null;
+  return trimmed;
+}
+
 function createGatewayProvider(request) {
-  const serverKey =
-    process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_AI_GATEWAY_API_KEY || null;
+  const serverKey = readGatewayApiKey();
   if (serverKey) {
     return createGateway({ apiKey: serverKey });
   }

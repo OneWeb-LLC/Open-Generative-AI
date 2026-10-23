@@ -29,6 +29,13 @@ export function formatErrorMessage(err, fallback = "Generation failed") {
   if (message.includes('402') || message.includes('INSUFFICIENT_CREDITS') || message.toLowerCase().includes('insufficient credits')) {
     return "Insufficient credits. Please top up your wallet.";
   }
+  if (
+    message.includes('gateway_auth_failed') ||
+    message.includes('AI Gateway auth failed') ||
+    message.includes('AI_GATEWAY_API_KEY')
+  ) {
+    return "Vercel AI Gateway auth failed. Set a valid AI_GATEWAY_API_KEY on this Vercel project (not the MuAPI key in Settings).";
+  }
   if (message.includes('401') || message.includes('403')) {
     return "Authentication failed. Please check your account session or API key.";
   }
