@@ -14,7 +14,7 @@
     "workflows": "Workflows",
     "agents": "Agents",
     "design-agent": "Design Agent",
-    "apps": "Explore Apps",
+    "apps": "OWeb Apps",
     "ai-influencer": "AI Influencer Studio"
   },
   "categories": {
@@ -24,7 +24,7 @@
     "agents-automation": "Agents & Automation"
   },
   "shell": {
-    "brand": "OpenGenerativeAI",
+    "brand": "Artemiis One",
     "studioFallback": "Studio",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
@@ -86,7 +86,7 @@
     "ariaLabel": "Generation activity and notifications"
   },
   "apiKeyModal": {
-    "title": "Open Generative AI",
+    "title": "Artemiis One",
     "subtitlePrefix": "Enter your",
     "subtitleSuffix": "API key to start creating",
     "close": "Close",

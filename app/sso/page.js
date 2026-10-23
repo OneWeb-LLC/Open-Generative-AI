@@ -13,7 +13,7 @@ function SsoInner() {
 
   useEffect(() => {
     if (!launchToken) {
-      setError('Missing launch token. Open Open Generative AI from the OWeb App Store.');
+      setError('Missing launch token. Open Artemiis One from the OWeb App Store.');
       return;
     }
 
