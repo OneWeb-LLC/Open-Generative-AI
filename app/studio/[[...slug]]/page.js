@@ -44,7 +44,7 @@ export default async function StudioPage() {
     const ctx = await establishProductSession(supabase, user, {
       accessToken: session?.access_token ?? null,
       activationKind: 'sign_in',
-      persistCookie: false,
+      persistCookie: true,
     });
     workspaceId = ctx.workspaceId;
     workspaces = ctx.workspaces ?? [];

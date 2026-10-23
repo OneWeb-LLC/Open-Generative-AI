@@ -40,11 +40,40 @@
   "settingsModal": {
     "title": "Settings",
     "subtitle": "Manage your AI studio preferences and authentication.",
+    "tabStudio": "Studio",
+    "tabTeam": "Team",
+    "tabActivity": "Activity",
+    "cloudHistoryHint": "When you are signed in, completed videos are stored in your active workspace and come back after you log out.",
     "activeApiKey": "Active API Key",
     "vercelGatewayKeyHint": "Vercel AI Gateway (video) uses the server AI_GATEWAY_API_KEY on this Vercel project — not the MuAPI workspace key below. Leave this key as-is unless you use MuAPI (satellite proxy).",
     "comfyRunpodKeyHint": "ComfyUI on RunPod uses the team RUNPOD_API_KEY on this Vercel project. The MuAPI workspace key below is not used for Oweb Sol video generation.",
     "changeKey": "Change Key",
     "close": "Close"
+  },
+  "team": {
+    "title": "Team workspace",
+    "subtitle": "Onboard teammates with their own OneID. Switch workspaces above to separate personal vs team work.",
+    "createTitle": "Create a team workspace",
+    "createPlaceholder": "Acme Creative Team",
+    "createCta": "Create team",
+    "creating": "Creating…",
+    "membersTitle": "Members",
+    "manageOnOweb": "Manage on One OS →",
+    "loading": "Loading members…",
+    "noMembers": "No members yet.",
+    "inviteLabel": "Invite by email (OneID required)",
+    "inviteCta": "Invite",
+    "inviteSent": "Invite sent. They will join with their OneID.",
+    "inviteFallback": "Use Manage on One OS to send the invite.",
+    "memberHint": "Only workspace admins can send invites.",
+    "signInRequired": "Sign in with OneID to manage a team."
+  },
+  "teamActivity": {
+    "title": "Team video activity",
+    "subtitle": "Track videos saved in this workspace — they persist across sessions.",
+    "loading": "Loading activity…",
+    "empty": "No saved videos yet. Completed videos appear here automatically.",
+    "signInRequired": "Sign in and select a workspace to see team activity."
   },
   "notifications": {
     "generating": "is generating",

@@ -35,6 +35,14 @@ assert(
   'missing ogi_workspace_preferences migration',
 );
 assert(
+  existsSync(resolve(root, 'supabase/migrations/20261023120000_ogi_team_generations.sql')),
+  'missing ogi_team_generations migration',
+);
+assert(
+  existsSync(resolve(root, 'app/api/workspace/generations/route.js')),
+  'missing workspace generations API',
+);
+assert(
   existsSync(resolve(root, 'app/api/workspace/switch/route.js')),
   'missing workspace switch API',
 );
