@@ -5,11 +5,12 @@ import { isAuthRequired } from '@/lib/ogi/constants';
 import { formatOneId, fetchOneIdHandle, oneIdFromUserMetadata } from '@/lib/oneid';
 import { createClient } from '@/lib/supabase/server';
 import { establishProductSession } from '@/lib/workspace/session.server';
+import { pageTitle } from '@/lib/ogi/branding';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: 'Studio — Open Generative AI',
+  title: pageTitle('Studio'),
 };
 
 export default async function StudioPage() {

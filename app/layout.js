@@ -2,6 +2,7 @@ import './globals.css';
 import { Inter } from "next/font/google";
 import { headers } from 'next/headers';
 import { getLocaleConfig } from '@/lib/locales';
+import { OWEB_ICON_PATH, SITE_NAME, SITE_SHORT_TAGLINE, pageTitle } from '@/lib/ogi/branding';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -9,8 +10,12 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: 'Open Generative AI — Free AI Image & Video Studio',
-  description: 'Generate AI images and videos using 200+ models — Flux, Midjourney, Kling, Veo, Seedance and more.',
+  title: pageTitle(SITE_SHORT_TAGLINE),
+  description: `${SITE_NAME} — ${SITE_SHORT_TAGLINE}. Flux, Kling, Veo, Seedance and more.`,
+  icons: {
+    icon: OWEB_ICON_PATH,
+    shortcut: OWEB_ICON_PATH,
+  },
 };
 
 export default async function RootLayout({ children }) {

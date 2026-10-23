@@ -14,7 +14,7 @@
     "workflows": "工作流",
     "agents": "智能体",
     "design-agent": "设计智能体",
-    "apps": "探索应用",
+    "apps": "OWeb 应用",
     "ai-influencer": "AI 网红工作室"
   },
   "categories": {
@@ -24,7 +24,7 @@
     "agents-automation": "智能体与自动化"
   },
   "shell": {
-    "brand": "OpenGenerativeAI",
+    "brand": "Artemiis One",
     "studioFallback": "工作室",
     "expandSidebar": "展开侧边栏",
     "collapseSidebar": "收起侧边栏",
@@ -55,7 +55,7 @@
     "ariaLabel": "生成活动与通知"
   },
   "apiKeyModal": {
-    "title": "Open Generative AI",
+    "title": "Artemiis One",
     "subtitlePrefix": "输入您的",
     "subtitleSuffix": "API 密钥以开始创作",
     "close": "关闭",

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import AgentChatClient from "./AgentChatClient";
+import { pageTitle } from '@/lib/ogi/branding';
 
 /**
  * Server component — fetches agentDetails from the /api/agents proxy
@@ -9,9 +10,9 @@ import AgentChatClient from "./AgentChatClient";
  * URL: /agents/[agent_id]   (new chat — no conversation ID yet)
  */
 export async function generateMetadata({ params }) {
-  const { agent_id } = await params;
+  await params;
   return {
-    title: `Agent Chat — Open Generative AI`,
+    title: pageTitle('Agent Chat'),
   };
 }
 

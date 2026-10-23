@@ -1,7 +1,8 @@
 import StandaloneShell from '@/components/StandaloneShell';
+import { pageTitle } from '@/lib/ogi/branding';
 
 export const metadata = {
-  title: 'Workflow — Open Generative AI',
+  title: pageTitle('Workflow'),
 };
 
 export default function WorkflowPage() {
