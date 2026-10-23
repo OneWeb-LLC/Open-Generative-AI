@@ -547,6 +547,7 @@ function MenuDropdown({
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function MotionControlStudio({
   apiKey,
+  storageScope = null,
   onGenerationStart,
   onGenerationEnd,
   onGenerationComplete,
@@ -557,7 +558,7 @@ export default function MotionControlStudio({
 }) {
   const copy = resolveCopy(en, zh, locale);
   const LEGACY_PERSIST_KEY = "hg_motion_control_studio_persistent";
-  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey);
+  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey, storageScope);
 
   useEffect(() => {
     migrateLegacyPersistKey(LEGACY_PERSIST_KEY, PERSIST_KEY);

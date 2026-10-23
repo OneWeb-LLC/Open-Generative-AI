@@ -17,13 +17,24 @@ This deployment is an OWeb constellation satellite. Identity, workspaces, and bi
 
 Post-auth (native or SSO): server resolves workspace context, calls OWeb activation APIs (with RPC fallback), upserts `ogi_profiles`.
 
+## Multi-tenant isolation (workspace scope)
+
+Each OWeb **workspace** (`ao_orgs`) is a tenant. The active workspace is stored in the `ogi_workspace_id` httpOnly cookie and surfaced in Settings via the workspace switcher (`POST /api/workspace/switch`).
+
+| Layer | Isolation |
+|-------|-----------|
+| Identity / billing | One OS (shared Supabase Auth, `ao_org_members`) |
+| BYOK MuAPI keys | Browser storage keyed by `userId` + `workspaceId` |
+| Studio drafts/history | `localStorage` scoped per workspace (`storageScope` on studio components) |
+| Server preferences | `ogi_workspace_preferences` — RLS via inline `ao_org_members` membership |
+
 ## Environment
 
 See `.env.example` and `ENV_AUDIT.md`. Never commit service role keys.
 
 ## Schema
 
-Apply `supabase/migrations/20261007220000_ogi_profiles_isolation.sql` on the shared One OS project.
+Apply all SQL in `supabase/migrations/` on the shared One OS project (profiles + workspace preferences).
 
 ## Control-plane registration (separate PR)
 

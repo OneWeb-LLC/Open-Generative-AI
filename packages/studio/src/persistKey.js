@@ -3,13 +3,17 @@
 // sharing one browser (different white-label end users, or BYOK vs white-label
 // mode) read/wrote the same fixed key — history and draft state leaked between
 // unrelated accounts on a shared device.
-export function scopedPersistKey(baseKey, apiKey) {
-  if (!apiKey) return baseKey;
+export function scopedPersistKey(baseKey, apiKey, storageScope = null) {
+  const identity =
+    storageScope != null && storageScope !== ''
+      ? `${storageScope}:${apiKey || ''}`
+      : apiKey;
+  if (!identity) return baseKey;
   // Short, stable hash — avoids putting a raw session token/API key verbatim
   // into a localStorage key name.
   let hash = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    hash = (hash * 31 + apiKey.charCodeAt(i)) | 0;
+  for (let i = 0; i < identity.length; i++) {
+    hash = (hash * 31 + identity.charCodeAt(i)) | 0;
   }
   return `${baseKey}:${(hash >>> 0).toString(36)}`;
 }

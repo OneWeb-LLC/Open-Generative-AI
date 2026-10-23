@@ -4,11 +4,11 @@
 
 - **Next.js 15** (App Router) + **React 19**
 - Creative UI: `packages/studio` (Image / Video / Lip Sync / Cinema)
-- **MuAPI** client calls are BYOK — keys in `localStorage` per user (`ogi_muapi_key_{userId}`)
+- **MuAPI** client calls are BYOK — keys in `localStorage` per user and workspace (`ogi_muapi_key_{userId}_{workspaceId}`)
 
 ## OWeb satellite
 
-Follow OneWeb-LLC/oweb satellite contracts (`docs/SATELLITE_ONBOARDING_KIT.md`). Do not add a second auth or Supabase project.
+Follow OneWeb-LLC/oweb satellite contracts (`docs/SATELLITE_ONBOARDING_KIT.md` in-repo checklist). Do not add a second auth or Supabase project.
 
 | Concern | Location |
 |---------|----------|

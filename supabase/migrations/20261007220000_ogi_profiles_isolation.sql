@@ -1,4 +1,4 @@
--- Open Higgsfield AI satellite (app_id=open-higgsfield-ai) on shared One OS
+-- Open Generative AI satellite (app_id=open-generative-ai) on shared One OS
 -- Local profile projection only: id = auth.users.id, self-only RLS (no ao_org_members helpers).
 
 -- Remove unused draft helper if a prior apply created it (never referenced by ogi_profiles policy).

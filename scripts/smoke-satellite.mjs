@@ -30,6 +30,14 @@ assert(
   existsSync(resolve(root, 'supabase/migrations/20261007220000_ogi_profiles_isolation.sql')),
   'missing ogi_profiles migration',
 );
+assert(
+  existsSync(resolve(root, 'supabase/migrations/20261022230000_ogi_workspace_tenant_isolation.sql')),
+  'missing ogi_workspace_preferences migration',
+);
+assert(
+  existsSync(resolve(root, 'app/api/workspace/switch/route.js')),
+  'missing workspace switch API',
+);
 
 const constants = readFileSync(resolve(root, 'lib/ogi/constants.js'), 'utf8');
 assert(constants.includes("OGI_APP_ID = 'open-generative-ai'"), 'app id must be open-generative-ai');
