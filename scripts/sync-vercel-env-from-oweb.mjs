@@ -15,7 +15,9 @@ import { Vercel } from '@vercel/sdk';
 
 const SOURCE_PROJECT = process.env.OWEB_VERCEL_PROJECT || 'oweb';
 const TARGET_PROJECT = process.env.OGI_VERCEL_PROJECT || 'open-generative-ai';
-const TEAM_ID = process.env.VERCEL_TEAM_ID || process.env.VERCEL_ORG_ID;
+const TEAM_ID =
+  process.env.VERCEL_TEAM_ID || process.env.VERCEL_ORG_ID || 'team_Na274IDFwAHRPi5JdFrzvRUk';
+const TEAM_SLUG = process.env.VERCEL_TEAM_SLUG || 'oweb';
 
 /** Keys safe to mirror from oweb → OGI satellite (no service role). */
 const COPY_KEYS = [
@@ -29,7 +31,15 @@ const COPY_KEYS = [
   'NEXT_PUBLIC_OWEB_ORIGIN',
   'NEXT_PUBLIC_OWEB_AUTH_HOST',
   'NEXT_PUBLIC_OWEB_APP_ID',
+  'MUAPI_UPSTREAM',
+  'AI_GATEWAY_API_KEY',
+  'VERCEL_AI_GATEWAY_API_KEY',
+  'OGI_ENABLE_VERCEL_VIDEO_PROVIDER',
+  'NEXT_PUBLIC_OGI_ENABLE_VERCEL_VIDEO_PROVIDER',
 ];
+
+/** Same key on source/target; skipped when Vercel marks them write-only (visibility: secret). */
+const COPY_SECRET_KEYS = ['MUAPI_KEY'];
 
 /** Map oweb secret → satellite server env for optional extra API provider. */
 const RENAME_KEYS = {
@@ -39,7 +49,9 @@ const RENAME_KEYS = {
 const BLOCKED = new Set(['SUPABASE_SERVICE_ROLE_KEY']);
 
 function teamFields() {
-  return TEAM_ID ? { teamId: TEAM_ID } : {};
+  if (TEAM_ID) return { teamId: TEAM_ID };
+  if (TEAM_SLUG) return { slug: TEAM_SLUG };
+  return {};
 }
 
 async function listProjectEnvs(vercel, projectIdOrName) {
@@ -86,6 +98,25 @@ async function main() {
       type: env.type === 'encrypted' ? 'encrypted' : 'plain',
       target: env.target?.length ? env.target : ['production', 'preview', 'development'],
       comment: `Synced from ${SOURCE_PROJECT} (${key})`,
+    });
+    copied += 1;
+    console.log(`synced ${key}`);
+  }
+
+  for (const key of COPY_SECRET_KEYS) {
+    const env = byKey.get(key);
+    if (!env?.value) {
+      console.warn(
+        `skip ${key}: not readable from ${SOURCE_PROJECT} (Vercel write-only secret — paste manually on ${TARGET_PROJECT})`,
+      );
+      continue;
+    }
+    await upsertEnv(vercel, TARGET_PROJECT, {
+      key,
+      value: env.value,
+      type: 'sensitive',
+      target: ['production', 'preview'],
+      comment: `Synced from ${SOURCE_PROJECT}/${key}`,
     });
     copied += 1;
     console.log(`synced ${key}`);
