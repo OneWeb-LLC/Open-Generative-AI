@@ -127,7 +127,11 @@ async function generateViaVercelGateway(apiKey, params, { imageMode = false } = 
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            ...(apiKey ? { 'x-api-key': apiKey } : {}),
+            // MuAPI workspace keys must not be sent as AI Gateway credentials; the server uses
+            // AI_GATEWAY_API_KEY, Vercel OIDC, or an optional x-ai-gateway-key BYOK header.
+            ...(clientConfig.gatewayApiKey
+                ? { 'x-ai-gateway-key': clientConfig.gatewayApiKey }
+                : {}),
         },
         body: JSON.stringify(payload),
     });
@@ -135,7 +139,19 @@ async function generateViaVercelGateway(apiKey, params, { imageMode = false } = 
     if (!response.ok) {
         const errText = await response.text();
         notifyAuthRequired(response.status, errText);
-        throw new Error(`Vercel gateway video failed: ${response.status} - ${errText.slice(0, 160)}`);
+        let detail = errText.slice(0, 200);
+        try {
+            const parsed = JSON.parse(errText);
+            const parts = [
+                parsed.message,
+                parsed.gatewayModel ? `gateway model: ${parsed.gatewayModel}` : null,
+                parsed.muapiModelId ? `studio model: ${parsed.muapiModelId}` : null,
+            ].filter(Boolean);
+            if (parts.length) detail = parts.join(' · ');
+        } catch {
+            /* keep raw slice */
+        }
+        throw new Error(`Vercel gateway video failed: ${response.status} - ${detail}`);
     }
 
     const data = await response.json();
