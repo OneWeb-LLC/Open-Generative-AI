@@ -37,6 +37,10 @@ import {
   videoModelMenuEntries as videoModelPickerEntries,
   videoModelMenuEntryByVariantId as videoModelPickerEntryByVariantId,
 } from "../modelFamilies.js";
+import {
+  isVideoPickerEntryVisibleForApiProvider,
+  isVideoModelVisibleForApiProvider,
+} from "../videoGenerativeProviders.js";
 import { getSeedanceEndpointResolution, getSeedanceToolConfiguration } from "../seedanceModels.js";
 import { getVeoToolConfiguration } from "../veoModels.js";
 import { getGroupedVideoConfiguration, getGroupedVideoCopyKey, getGroupedVideoVariantOptions } from "../groupedVideoModels.js";
@@ -450,30 +454,37 @@ function seedanceToolLabel(tool, copy, includeAction = false) {
   ].filter(Boolean).join(" · ");
 }
 
-function ModelDropdown({ selectedModel, onSelect, onClose, copy = en }) {
+function ModelDropdown({ selectedModel, onSelect, onClose, copy = en, apiProviderId = "muapi-proxy" }) {
   const [search, setSearch] = useState("");
   const selectedEntry = videoModelPickerEntryByVariantId.get(selectedModel);
   const selectedModelProvider = selectedEntry?.family.provider || "all";
+  const providerVisibleEntries = useMemo(
+    () =>
+      videoModelPickerEntries.filter((entry) =>
+        isVideoPickerEntryVisibleForApiProvider(entry, apiProviderId),
+      ),
+    [apiProviderId],
+  );
   const modelCategories = [
     {
       id: "all",
       label: copy.categories.all,
-      entries: videoModelPickerEntries,
+      entries: providerVisibleEntries,
     },
     {
       id: "t2v",
       label: copy.categories.t2v,
-      entries: videoModelPickerEntries.filter((entry) => entry.variantsByMode.t2v && !getVeoToolConfiguration(entry.defaultVariant.model.id)),
+      entries: providerVisibleEntries.filter((entry) => entry.variantsByMode.t2v && !getVeoToolConfiguration(entry.defaultVariant.model.id)),
     },
     {
       id: "i2v",
       label: copy.categories.i2v,
-      entries: videoModelPickerEntries.filter((entry) => entry.variantsByMode.i2v),
+      entries: providerVisibleEntries.filter((entry) => entry.variantsByMode.i2v),
     },
     {
       id: "v2v",
       label: copy.categories.v2v,
-      entries: videoModelPickerEntries.filter((entry) => entry.variantsByMode.v2v || getVeoToolConfiguration(entry.defaultVariant.model.id)),
+      entries: providerVisibleEntries.filter((entry) => entry.variantsByMode.v2v || getVeoToolConfiguration(entry.defaultVariant.model.id)),
     },
   ];
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -1306,6 +1317,43 @@ export default function VideoStudio({
     [applySelectedVariant, reconcileReferencesForModel],
   );
 
+  useEffect(() => {
+    const current = videoModelCatalog.variantById.get(selectedModel)?.model;
+    if (current && isVideoModelVisibleForApiProvider(current, apiProviderId)) {
+      if (apiProviderId === "comfy-runpod" && v2vMode) setV2vMode(false);
+      return;
+    }
+
+    const preferredVariantId =
+      apiProviderId === "comfy-runpod"
+        ? imageMode
+          ? "oweb-sol-i2v"
+          : "oweb-sol-t2v"
+        : null;
+    const preferred = preferredVariantId
+      ? videoModelCatalog.variantById.get(preferredVariantId)
+      : null;
+    const fallbackEntry = videoModelPickerEntries.find((entry) =>
+      isVideoPickerEntryVisibleForApiProvider(entry, apiProviderId),
+    );
+    const target = preferred || fallbackEntry?.defaultVariant;
+    if (!target?.model?.id) return;
+
+    const family = videoModelCatalog.familyByVariantId.get(target.model.id);
+    if (!family) return;
+
+    if (apiProviderId === "comfy-runpod") setV2vMode(false);
+    const mode = target.mode || (imageMode ? "i2v" : "t2v");
+    setImageMode(mode === "i2v");
+    applyUserSelectedVariant(target, mode, family);
+  }, [
+    apiProviderId,
+    selectedModel,
+    imageMode,
+    v2vMode,
+    applyUserSelectedVariant,
+  ]);
+
   // ── Persistence: Load ────────────────────────────────────────────────────
   useEffect(() => {
     try {
@@ -2097,7 +2145,7 @@ export default function VideoStudio({
 
   const tryEstimateCost = useCallback(
     async (params, modelKind) => {
-      if (apiProviderId === "vercel-ai-gateway") return null;
+      if (apiProviderId === "vercel-ai-gateway" || apiProviderId === "comfy-runpod") return null;
       try {
         if (modelKind === "v2v") return await estimateV2VCost(apiKey, params);
         return await estimateVideoCost(apiKey, params, { modelKind });
@@ -2259,6 +2307,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
             type: "video",
+            meta: entry.meta,
           });
       } else if (imageMode) {
         const i2vParams = {
@@ -2309,6 +2358,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",
+            meta: entry.meta,
           });
       } else {
         // T2V (including extend mode)
@@ -2364,6 +2414,7 @@ export default function VideoStudio({
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",
+            meta: entry.meta,
           });
       }
     } catch (e) {
@@ -3054,6 +3105,7 @@ export default function VideoStudio({
                       onSelect={handleModelSelect}
                       onClose={() => setOpenDropdown(null)}
                       copy={copy}
+                      apiProviderId={apiProviderId}
                     />
                   </PromptPopover>
                 )}

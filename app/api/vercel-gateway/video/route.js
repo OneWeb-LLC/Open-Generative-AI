@@ -5,6 +5,7 @@ import {
   buildGatewayVideoCallOptions,
   resolveGatewayVideoModel,
 } from '@/lib/ogi/vercel-video-models';
+import { resolveGatewayVideoPriceUsd } from '@/lib/ogi/gateway-generation-cost';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -125,6 +126,8 @@ export async function POST(request) {
       base64 = Buffer.from(video.uint8Array).toString('base64');
     }
 
+    const price = await resolveGatewayVideoPriceUsd(gateway, result);
+
     const metadata = {
       provider: 'vercel-ai-gateway',
       model: muapiModelId || gatewayModel,
@@ -132,6 +135,9 @@ export async function POST(request) {
       durationMs: Date.now() - started,
       warnings: result.warnings ?? [],
       providerMetadata: result.providerMetadata ?? null,
+      generationId: price?.generationId ?? result.providerMetadata?.gateway?.generationId ?? null,
+      priceUsd: price?.priceUsd ?? null,
+      priceSource: price?.source ?? null,
       responses: Array.isArray(result.responses)
         ? result.responses.map((r) => ({
             timestamp: r.timestamp,
@@ -140,6 +146,11 @@ export async function POST(request) {
         : [],
     };
 
+    const cost =
+      price?.priceUsd != null
+        ? { cost: price.priceUsd, currency: 'usd', generationId: price.generationId }
+        : null;
+
     const dataUrl = `data:${mediaType};base64,${base64}`;
 
     return NextResponse.json({
@@ -147,6 +158,7 @@ export async function POST(request) {
       base64,
       mediaType,
       metadata,
+      cost,
       gatewayModel,
       model: muapiModelId || gatewayModel,
     });

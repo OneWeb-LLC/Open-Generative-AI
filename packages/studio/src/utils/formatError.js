@@ -36,6 +36,9 @@ export function formatErrorMessage(err, fallback = "Generation failed") {
   ) {
     return "Vercel AI Gateway auth failed. Set a valid AI_GATEWAY_API_KEY on this Vercel project (not the MuAPI key in Settings).";
   }
+  if (message.includes("Comfy RunPod") || message.includes("runpod_not_configured")) {
+    return "Comfy on RunPod failed. Ensure RUNPOD_API_KEY and the Comfy endpoint are set on the server, then retry.";
+  }
   if (message.includes('Cannot find module \'undici\'') || message.includes('Failed to download')) {
     return "Video was generated but could not be retrieved from the provider. Retry in a moment or switch to MuAPI (satellite proxy) in Settings.";
   }
