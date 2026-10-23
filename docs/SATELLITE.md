@@ -29,7 +29,7 @@ Each OWeb **workspace** (`ao_orgs`) is a tenant. The active workspace is stored 
 | BYOK MuAPI keys | Optional when OWeb billing is off; browser storage keyed by `userId` + `workspaceId` |
 | Studio drafts/history | `localStorage` scoped per workspace (`storageScope` on studio components) |
 | Durable outputs (video) | `ogi_workspace_generations` — workspace members read all rows; creators insert; logout-safe |
-| Team management | Settings → **Team** / **Activity**; invites via One OS (OneID); `GET/POST /api/workspace/*` |
+| Team management | **`/studio/team`** — workspace catalog (membership ∩ activation); **Activate here** → `one_id_workspace_activations`; switcher lists activated workspaces only; Settings links to full page |
 | Server preferences | `ogi_workspace_preferences` — RLS via inline `ao_org_members` membership |
 
 ## Environment
