@@ -17,6 +17,13 @@ import { createClient } from '@/lib/supabase/client';
 import { muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
 import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
+import TeamPanel from '@/components/TeamPanel';
+import WorkspaceActivityPanel from '@/components/WorkspaceActivityPanel';
+import {
+  deleteWorkspaceGenerationRecord,
+  fetchWorkspaceGenerations,
+  persistWorkspaceGeneration,
+} from '@/lib/ogi/workspace-generations-client';
 import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
 import {
   loadClientSecret,
@@ -384,6 +391,8 @@ export default function StandaloneShell({
 
   const [balance, setBalance] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsSection, setSettingsSection] = useState('studio');
+  const [videoCloudHistory, setVideoCloudHistory] = useState(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [showVadooBanner, setShowVadooBanner] = useState(() => {
@@ -494,6 +503,31 @@ export default function StandaloneShell({
     }
   }, []);
 
+  const persistVideoToWorkspace = useCallback(async (data) => {
+    if (!userId || !workspaceId || !data?.url) return;
+    try {
+      const body = await persistWorkspaceGeneration({
+        studio_type: 'video',
+        media_url: data.url,
+        external_id: data.requestId || data.id || null,
+        prompt: typeof data.prompt === 'string' ? data.prompt : '',
+        model: typeof data.model === 'string' ? data.model : '',
+        metadata: data.meta && typeof data.meta === 'object' ? data.meta : {},
+      }, workspaceId);
+      const entry = body.historyEntry;
+      if (!entry) return;
+      setVideoCloudHistory((previous) => {
+        const list = previous ?? [];
+        const withoutDup = list.filter(
+          (item) => item.recordId !== entry.recordId && item.id !== entry.id,
+        );
+        return [entry, ...withoutDup].slice(0, 100);
+      });
+    } catch (err) {
+      console.warn('[ogi] workspace video persist failed', err);
+    }
+  }, [userId, workspaceId]);
+
   const makeSuccessCallback = useCallback((tabId) => (data) => {
     const tab = TABS.find(t => t.id === tabId);
     pushNotification({
@@ -502,7 +536,55 @@ export default function StandaloneShell({
       label: tab?.label || tabId,
       resultUrl: data?.url || null,
     });
-  }, [pushNotification]);
+    if (tabId === 'video') {
+      void persistVideoToWorkspace(data);
+    }
+  }, [persistVideoToWorkspace, pushNotification]);
+
+  const handleDeleteVideoHistoryItem = useCallback(async (entry) => {
+    const recordId = entry?.recordId;
+    if (recordId && userId && workspaceId) {
+      try {
+        await deleteWorkspaceGenerationRecord(recordId, workspaceId);
+      } catch (err) {
+        console.warn('[ogi] workspace video delete failed', err);
+      }
+    }
+    setVideoCloudHistory((previous) => {
+      if (!previous) return previous;
+      return previous.filter(
+        (item) => item.recordId !== recordId && item.id !== entry?.id,
+      );
+    });
+  }, [userId, workspaceId]);
+
+  useEffect(() => {
+    if (!userId || !workspaceId) {
+      setVideoCloudHistory(null);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const body = await fetchWorkspaceGenerations({
+          workspaceId,
+          studioType: 'video',
+          limit: 100,
+        });
+        if (!cancelled) {
+          setVideoCloudHistory(body.history ?? []);
+        }
+      } catch (err) {
+        console.warn('[ogi] workspace video history load failed', err);
+        if (!cancelled) setVideoCloudHistory([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, workspaceId, storageScope]);
 
   const makeErrorCallback = useCallback((tabId) => (errorOrMessage) => {
     const tab = TABS.find(t => t.id === tabId);
@@ -1090,7 +1172,20 @@ export default function StandaloneShell({
           <LayersStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('layers')} onGenerationEnd={makeGenerationEndCallback('layers')} onGenerationComplete={makeSuccessCallback('layers')} onGenerationError={makeErrorCallback('layers')} />
         </div>
         <div className={activeTab === 'video' ? "h-full w-full" : "hidden"}>
-          <VideoStudio apiKey={apiKey} storageScope={storageScope} apiProviderId={providerId} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('video')} onGenerationEnd={makeGenerationEndCallback('video')} onGenerationComplete={makeSuccessCallback('video')} onGenerationError={makeErrorCallback('video')} />
+          <VideoStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            apiProviderId={providerId}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('video')}
+            onGenerationEnd={makeGenerationEndCallback('video')}
+            onGenerationComplete={makeSuccessCallback('video')}
+            onGenerationError={makeErrorCallback('video')}
+            historyItems={userId && workspaceId ? videoCloudHistory : undefined}
+            onDeleteHistoryItem={userId && workspaceId ? handleDeleteVideoHistoryItem : undefined}
+          />
         </div>
         <div className={activeTab === 'clipping' ? "h-full w-full" : "hidden"}>
           <ClippingStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('clipping')} onGenerationEnd={makeGenerationEndCallback('clipping')} onGenerationComplete={makeSuccessCallback('clipping')} onGenerationError={makeErrorCallback('clipping')} />
@@ -1283,9 +1378,9 @@ export default function StandaloneShell({
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             <h2 className="text-white font-bold text-lg mb-2">{copy.settingsModal.title}</h2>
-            <p className="text-white/40 text-[13px] mb-8">
+            <p className="text-white/40 text-[13px] mb-4">
               {copy.settingsModal.subtitle}
             </p>
 
@@ -1303,6 +1398,49 @@ export default function StandaloneShell({
               />
             )}
 
+            {userId && (
+              <div className="flex gap-1 mb-6 mt-4 border-b border-white/10 pb-2">
+                {[
+                  { id: 'studio', label: copy.settingsModal.tabStudio || 'Studio' },
+                  { id: 'team', label: copy.settingsModal.tabTeam || 'Team' },
+                  { id: 'activity', label: copy.settingsModal.tabActivity || 'Activity' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSettingsSection(tab.id)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                      settingsSection === tab.id
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {settingsSection === 'team' && userId ? (
+              <div className="mb-8">
+                <TeamPanel
+                  workspaceId={workspaceId}
+                  userId={userId}
+                  workspaces={workspaces}
+                  copy={copy}
+                  currentUserOneId={oneId}
+                  onTeamWorkspaceCreated={() => router.refresh()}
+                />
+              </div>
+            ) : settingsSection === 'activity' && userId ? (
+              <div className="mb-8">
+                <WorkspaceActivityPanel
+                  workspaceId={workspaceId}
+                  userId={userId}
+                  copy={copy}
+                />
+              </div>
+            ) : (
             <div className="space-y-4 mb-8">
               {apiProviders.length > 0 && (
                 <ApiProviderSelect
@@ -1330,10 +1468,17 @@ export default function StandaloneShell({
                    {copy.settingsModal.activeApiKey}
                 </label>
                 <div className="text-[13px] font-mono text-white/80">
-                  {apiKey.slice(0, 8)}••••••••••••••••
+                  {apiKey?.slice(0, 8)}••••••••••••••••
                 </div>
               </div>
+              {userId && workspaceId && (
+                <p className="text-[11px] text-white/35 leading-relaxed">
+                  {copy.settingsModal.cloudHistoryHint ||
+                    'Signed-in videos are saved to your workspace and reload after logout.'}
+                </p>
+              )}
             </div>
+            )}
 
             <div className="flex gap-3">
               <button
