@@ -6,6 +6,10 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/',
+    '/features',
+    '/zh',
+    '/zh/features',
     '/studio/:path*',
     '/zh/studio/:path*',
     '/agents/:path*',
@@ -13,5 +17,8 @@ export const config = {
     '/assistant/:path*',
     '/login',
     '/sso',
+    '/api/workspace/:path*',
+    '/api/auth/:path*',
+    '/api/ogi/:path*',
   ],
 };

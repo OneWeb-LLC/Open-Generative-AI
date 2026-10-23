@@ -6,6 +6,10 @@ import {
   v2vModels,
 } from "./models.js";
 import { OWEB_SOL_I2V_MODELS, OWEB_SOL_T2V_MODELS } from "./owebSolModels.js";
+import {
+  VERCEL_GATEWAY_I2V_MODELS,
+  VERCEL_GATEWAY_T2V_MODELS,
+} from "./vercelGatewayVideoModels.js";
 import { getModelMediaCapabilities } from "./modelCapabilities.js";
 import {
   getGroupedVideoConfiguration,
@@ -578,8 +582,16 @@ export const imageModelCatalog = buildCatalog(
   },
 );
 
-const studioT2vModels = [...t2vModels, ...OWEB_SOL_T2V_MODELS];
-const studioI2vModels = [...i2vModels, ...OWEB_SOL_I2V_MODELS];
+const studioT2vModels = [
+  ...t2vModels,
+  ...OWEB_SOL_T2V_MODELS,
+  ...VERCEL_GATEWAY_T2V_MODELS,
+];
+const studioI2vModels = [
+  ...i2vModels,
+  ...OWEB_SOL_I2V_MODELS,
+  ...VERCEL_GATEWAY_I2V_MODELS,
+];
 
 export const videoModelCatalog = buildCatalog(
   [

@@ -13,10 +13,8 @@ export default function LoginForm() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [mode, setMode] = useState('signin');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
 
   async function completeAuth(activationKind) {
     await fetch('/api/auth/complete', {
@@ -33,33 +31,26 @@ export default function LoginForm() {
     if (busy) return;
     setBusy(true);
     setError(null);
-    setMessage(null);
 
     const trimmed = email.trim();
     const supabase = createClient();
 
     try {
-      if (mode === 'signup') {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email: trimmed,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (signUpError) throw signUpError;
-        if (data.session?.user) {
-          await completeAuth('signup');
-          return;
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmed,
+        password,
+      });
+      if (signInError) {
+        const msg = signInError.message || '';
+        if (/invalid login credentials/i.test(msg)) {
+          throw new Error(
+            'No matching OneID for that email and password. Create or recover your account on OWeb, then sign in here with the same credentials.',
+          );
         }
-        setMessage('Check your email to confirm your account.');
-      } else {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email: trimmed,
-          password,
-        });
-        if (signInError) throw signInError;
-        if (data.session?.user) {
-          await completeAuth('sign_in');
-        }
+        throw signInError;
+      }
+      if (data.session?.user) {
+        await completeAuth('sign_in');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
@@ -69,18 +60,20 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-md">
-      <h2 className="text-2xl font-bold">{mode === 'signin' ? 'Sign in' : 'Create account'}</h2>
-      <p className="mt-2 text-sm text-white/50">Same email and password as OWeb — no second account.</p>
+    <div className="w-full">
+      <h2 className="text-2xl font-normal text-[#202124]">Sign in</h2>
+      <p className="mt-2 text-sm text-[#5f6368]">
+        OneID only — use the same email and password as OWeb. This app does not create a second account.
+      </p>
 
       <div className="mt-6">
         <ContinueWithOweb />
       </div>
 
       <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-white/40">or email</span>
-        <div className="h-px flex-1 bg-white/10" />
+        <div className="h-px flex-1 bg-[#dadce0]" />
+        <span className="text-xs text-[#80868b]">or email</span>
+        <div className="h-px flex-1 bg-[#dadce0]" />
       </div>
 
       <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
@@ -89,7 +82,7 @@ export default function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-[#dadce0] bg-white px-3 py-2.5 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
           required
           autoComplete="email"
         />
@@ -98,49 +91,25 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-[#dadce0] bg-white px-3 py-2.5 text-sm text-[#202124] outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8]"
           required
-          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          autoComplete="current-password"
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
-        {message && <p className="text-sm text-[#d9ff00]">{message}</p>}
+        {error && <p className="text-sm text-[#d93025]">{error}</p>}
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-lg bg-[#d9ff00] py-2.5 text-sm font-bold text-black disabled:opacity-50"
+          className="w-full rounded-full bg-[#1a73e8] py-2.5 text-sm font-medium text-white hover:bg-[#1765cc] disabled:opacity-50"
         >
-          {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
+          {busy ? 'Please wait…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-white/50">
-        {mode === 'signin' ? (
-          <>
-            New to OWeb?{' '}
-            <a href={owebSignupUrl()} className="text-[#d9ff00] hover:underline">
-              Create a OneID
-            </a>
-            {' · '}
-            <button
-              type="button"
-              onClick={() => setMode('signup')}
-              className="text-[#d9ff00] hover:underline"
-            >
-              Sign up here
-            </button>
-          </>
-        ) : (
-          <>
-            Have an account?{' '}
-            <button
-              type="button"
-              onClick={() => setMode('signin')}
-              className="text-[#d9ff00] hover:underline"
-            >
-              Sign in
-            </button>
-          </>
-        )}
+      <p className="mt-6 text-center text-sm text-[#5f6368]">
+        New to OWeb?{' '}
+        <a href={owebSignupUrl()} className="text-[#1a73e8] font-medium hover:underline">
+          Create a OneID on OWeb
+        </a>
       </p>
     </div>
   );

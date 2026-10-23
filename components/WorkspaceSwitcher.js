@@ -3,17 +3,34 @@
 import { useState } from 'react';
 
 /**
- * @param {{ workspaces: Array<{ id: string; name: string; slug?: string; kind?: string | null }>; activeWorkspaceId: string | null; onSwitched?: (workspaceId: string) => void }} props
+ * @param {{
+ *   workspaces: Array<{ id: string; name: string; slug?: string; kind?: string | null }>;
+ *   activeWorkspaceId: string | null;
+ *   teamPath?: string | null;
+ *   onSwitched?: (workspaceId: string) => void;
+ * }} props
  */
 export default function WorkspaceSwitcher({
   workspaces = [],
   activeWorkspaceId,
+  teamPath = '/studio/team',
   onSwitched,
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
 
-  if (!workspaces.length) return null;
+  if (!workspaces.length) {
+    return (
+      <div className="mb-6">
+        <p className="text-xs text-white/40 mb-2">No activated workspaces yet.</p>
+        {teamPath && (
+          <a href={teamPath} className="text-xs font-bold text-[#22d3ee] hover:underline">
+            Activate a workspace →
+          </a>
+        )}
+      </div>
+    );
+  }
 
   async function handleChange(nextId) {
     if (!nextId || nextId === activeWorkspaceId || pending) return;
@@ -27,6 +44,10 @@ export default function WorkspaceSwitcher({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (body.error === 'workspace_not_activated' && teamPath) {
+          window.location.href = teamPath;
+          return;
+        }
         setError(body.error || 'Could not switch workspace');
         return;
       }
@@ -56,6 +77,14 @@ export default function WorkspaceSwitcher({
           </option>
         ))}
       </select>
+      {teamPath && (
+        <a
+          href={teamPath}
+          className="inline-block mt-2 text-[11px] font-bold text-[#22d3ee] hover:underline"
+        >
+          Manage & activate workspaces →
+        </a>
+      )}
       {error ? <p className="mt-2 text-[11px] text-red-400">{error}</p> : null}
       {pending ? (
         <p className="mt-2 text-[11px] text-white/40">Switching workspace…</p>

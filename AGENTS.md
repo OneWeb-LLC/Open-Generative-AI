@@ -4,7 +4,8 @@
 
 - **Next.js 15** (App Router) + **React 19**
 - Creative UI: `packages/studio` (Image / Video / Lip Sync / Cinema)
-- **MuAPI** client calls are BYOK — keys in `localStorage` per user and workspace (`ogi_muapi_key_{userId}_{workspaceId}`)
+- **MuAPI** BYOK when OWeb billing is off — keys in `localStorage` per user and workspace (`ogi_muapi_key_{userId}_{workspaceId}`)
+- **OWeb billing** (`NEXT_PUBLIC_OGI_USE_OWEB_BILLING`) — generative traffic via `/api/oweb-studio/generative` → OWeb workspace wallet; balance `GET /api/ogi/wallet`
 
 ## OWeb satellite
 
@@ -16,7 +17,8 @@ Follow OneWeb-LLC/oweb satellite contracts (`docs/SATELLITE_ONBOARDING_KIT.md` i
 | Browser Supabase | `lib/supabase/client.js` (`ao-supabase-auth`) |
 | SSO redeem | `app/api/sso/redeem/route.js` → OWeb `/api/v1/ecosystem/redeem-launch-token` (no service role on satellite) |
 | Post-login activation | `app/api/auth/complete/route.js`, `lib/workspace/session.server.js` |
-| Protected studio | `middleware.js`, `app/studio/page.js` |
+| OWeb generative proxy | `app/api/oweb-studio/generative/[...path]/route.js`, `lib/ogi/oweb-studio-proxy.server.js` |
+| Protected studio | `middleware.js`, `app/studio/[[...slug]]/page.js` |
 
 ## Commands
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { requireWorkspaceMember } from '@/lib/workspace/authz.server';
 import { establishProductSession } from '@/lib/workspace/session.server';
+import { isWorkspaceActivated } from '@/lib/workspace/workspace-activations.server';
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -25,6 +26,14 @@ export async function POST(request) {
     await requireWorkspaceMember(supabase, workspaceId, user.id);
   } catch {
     return NextResponse.json({ error: 'workspace_forbidden' }, { status: 403 });
+  }
+
+  const activated = await isWorkspaceActivated(supabase, user.id, workspaceId);
+  if (!activated) {
+    return NextResponse.json(
+      { error: 'workspace_not_activated', activate_url: '/studio/team' },
+      { status: 409 },
+    );
   }
 
   const {

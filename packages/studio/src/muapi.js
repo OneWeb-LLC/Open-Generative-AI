@@ -10,11 +10,16 @@ import { getModelMediaCapabilities, mapReferenceParams } from './modelCapabiliti
 import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
 import { buildGenerationMetadata } from './utils/generationMetadata.js';
-import { isPlatformManagedMuapiKey, muapiKeyHeaders } from './muapiAuth.js';
+import {
+    isOwebHostedClientKey,
+    isPlatformManagedMuapiKey,
+    muapiKeyHeaders,
+} from './muapiAuth.js';
 
 export { PLATFORM_MANAGED_MUAPI_KEY, isPlatformManagedMuapiKey } from './muapiAuth.js';
+export { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from './muapiAuth.js';
 
-/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
+/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
 
 /** @type {GenerativeClientConfig} */
 let clientConfig = {
@@ -40,7 +45,11 @@ function getBaseUrl() {
     }
     // vercel-video only overrides T2V/I2V; other studios still use the MuAPI proxy.
     const proxyPath =
-        clientConfig.mode === 'vercel-video' ? '/api' : clientConfig.proxyPath || '/api';
+        clientConfig.mode === 'vercel-video'
+            ? '/api'
+            : clientConfig.mode === 'oweb-studio'
+              ? clientConfig.proxyPath || '/api/oweb-studio/generative'
+              : clientConfig.proxyPath || '/api';
     try {
         if (import.meta.env?.DEV) {
             return proxyPath;
@@ -159,12 +168,14 @@ async function generateViaComfyRunpod(apiKey, params, { imageMode = false } = {}
 
 async function generateViaVercelGateway(apiKey, params, { imageMode = false } = {}) {
     const base = (clientConfig.proxyPath || '/api/vercel-gateway').replace(/\/$/, '');
+    const modelInfo = imageMode ? getI2VModelById(params.model) : getVideoModelById(params.model);
     const payload = {
         model: params.model,
         prompt: params.prompt,
         aspect_ratio: params.aspect_ratio,
         duration: params.duration,
         resolution: params.resolution,
+        ...(modelInfo?.gatewayModel ? { gatewayModel: modelInfo.gatewayModel } : {}),
     };
     if (imageMode) {
         payload.image_url =
@@ -626,7 +637,7 @@ export function uploadFile(apiKey, file, onProgress) {
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', url);
-        if (!isPlatformManagedMuapiKey(apiKey)) {
+        if (apiKey && !isPlatformManagedMuapiKey(apiKey) && !isOwebHostedClientKey(apiKey)) {
             xhr.setRequestHeader('x-api-key', apiKey);
         }
         xhr.timeout = FILE_UPLOAD_TIMEOUT_MS;
@@ -1103,7 +1114,7 @@ export async function handleProxyRequest(prefix, path, method, headers, body, ap
     finalHeaders.delete('connection');
     finalHeaders.delete('content-length'); // Let fetch recalculate this for safety
 
-    if (apiKey && !isPlatformManagedMuapiKey(apiKey)) {
+    if (apiKey && !isPlatformManagedMuapiKey(apiKey) && !isOwebHostedClientKey(apiKey)) {
         finalHeaders.set('x-api-key', apiKey);
     }
 

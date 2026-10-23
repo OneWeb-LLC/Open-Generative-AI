@@ -1,5 +1,6 @@
 import { getMuapiApiKeyFromCookies } from '@/lib/ogi/muapi-api-key-cookies.server';
 import AgentChatClient from "../AgentChatClient";
+import { pageTitle } from '@/lib/ogi/branding';
 
 /**
  * Server component — fetches both agentDetails and initialHistory
@@ -8,9 +9,9 @@ import AgentChatClient from "../AgentChatClient";
  *
  * URL: /agents/[agent_id]/[conversation_id]
  */
-export async function generateMetadata({ params }) {
+export async function generateMetadata() {
   return {
-    title: `Agent Chat — Open Generative AI`,
+    title: pageTitle('Agent Chat'),
   };
 }
 

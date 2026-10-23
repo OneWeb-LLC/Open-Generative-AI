@@ -14,14 +14,22 @@ import ApiKeyModal from './ApiKeyModal';
 import ApiProviderSelect from './ApiProviderSelect';
 import { getCommonCopy, getLocaleConfig, localizeStudioPath } from '@/lib/locales';
 import { createClient } from '@/lib/supabase/client';
-import { muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
+import { getOwebAppUrl, muapiStorageKey, apiProviderStorageKey } from '@/lib/ogi/constants';
 import {
   PLATFORM_MANAGED_MUAPI_KEY,
   isPlatformManagedMuapiKey,
 } from '@/lib/ogi/muapi-client';
 import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
+import TeamPanel from '@/components/TeamPanel';
+import WorkspaceActivityPanel from '@/components/WorkspaceActivityPanel';
+import { useWorkspaceAssets } from '@/lib/ogi/useWorkspaceAssets';
+import { TAB_TO_STUDIO_TYPE } from '@/lib/ogi/workspace-assets';
+import AssetLibraryStudio from '@/components/AssetLibraryStudio';
+import BrandLogo from '@/components/BrandLogo';
+import LegalFooter from '@/components/legal/LegalFooter';
 import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
+import { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from '@/lib/ogi/oweb-hosted';
 import {
   loadClientSecret,
   removeClientSecret,
@@ -34,6 +42,17 @@ import {
 // inside the component below, with these English strings as the fallback
 // when a locale bundle is missing the key.
 const TABS = [
+  {
+    id: 'library',
+    label: 'Asset Library',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
+        <path d="M8 7h8M8 11h8"/>
+      </svg>
+    )
+  },
   {
     id: 'image',
     label: 'Image Studio',
@@ -201,7 +220,7 @@ const TABS = [
   },
   {
     id: 'apps',
-    label: 'Explore Apps',
+    label: 'OWeb Apps',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="7" height="7"/>
@@ -226,7 +245,7 @@ const NAVIGATION_CATEGORIES = [
   {
     id: 'images',
     label: 'Images',
-    tabIds: ['image', 'layers', 'cinema', 'design-agent', 'ai-influencer'],
+    tabIds: ['library', 'image', 'layers', 'cinema', 'design-agent', 'ai-influencer'],
     icon: (
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -287,7 +306,7 @@ const MAX_VISIBLE_NOTIFICATIONS = 3;
 
 function syncMuapiKeyCookie(key) {
   if (typeof document === 'undefined') return;
-  if (!key || isPlatformManagedMuapiKey(key)) {
+  if (!key || isPlatformManagedMuapiKey(key) || isOwebHostedClientKey(key)) {
     document.cookie = 'muapi_key=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return;
   }
@@ -328,9 +347,13 @@ export default function StandaloneShell({
   oneId = null,
   workspaceId = null,
   workspaces = [],
+  activatedWorkspaces = [],
+  hasUnactivatedTeam = false,
+  teamPath = '/studio/team',
   apiProviders = [],
   defaultProviderId = 'muapi-proxy',
   platformMuapiKeyConfigured = false,
+  owebBillingEnabled = false,
 }) {
   const params = useParams();
   const router = useRouter();
@@ -396,8 +419,16 @@ export default function StandaloneShell({
   const [apiKey, setApiKey] = useState(null);
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
+  const workspaceAssets = useWorkspaceAssets({
+    userId,
+    workspaceId,
+    storageScope,
+    apiKey,
+  });
+
   const [balance, setBalance] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsSection, setSettingsSection] = useState('studio');
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [showVadooBanner, setShowVadooBanner] = useState(() => {
@@ -501,12 +532,19 @@ export default function StandaloneShell({
 
   const fetchBalance = useCallback(async (key) => {
     try {
+      if (owebBillingEnabled && (isOwebHostedClientKey(key) || !key)) {
+        const res = await fetch('/api/ogi/wallet', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBalance(data.balance ?? data.credits_available ?? null);
+        return;
+      }
       const data = await getUserBalance(key);
       setBalance(data.balance);
     } catch (err) {
       console.error('Balance fetch failed:', err);
     }
-  }, []);
+  }, [owebBillingEnabled]);
 
   const makeSuccessCallback = useCallback((tabId) => (data) => {
     const tab = TABS.find(t => t.id === tabId);
@@ -516,7 +554,16 @@ export default function StandaloneShell({
       label: tab?.label || tabId,
       resultUrl: data?.url || null,
     });
-  }, [pushNotification]);
+    void workspaceAssets.persistCompletion(data, tabId);
+  }, [pushNotification, workspaceAssets]);
+
+  const makeDeleteHistoryCallback = useCallback(
+    (studioType) => async (entry) => {
+      await workspaceAssets.deleteHistoryItem(studioType, entry);
+    },
+    [workspaceAssets],
+  );
+
 
   const makeErrorCallback = useCallback((tabId) => (errorOrMessage) => {
     const tab = TABS.find(t => t.id === tabId);
@@ -582,6 +629,13 @@ export default function StandaloneShell({
     setActiveTab(tabId);
   }, [studioPath]);
 
+  const handleOpenAssetInStudio = useCallback((studioType) => {
+    const tabId =
+      Object.entries(TAB_TO_STUDIO_TYPE).find(([, type]) => type === studioType)?.[0] ||
+      (studioType === 'image' || studioType === 'cinema' ? 'image' : 'video');
+    handleTabChange(tabId);
+  }, [handleTabChange]);
+
   const handleOpenNotification = useCallback((notification) => {
     handleTabChange(notification.tabId);
     dismissNotification(notification.id);
@@ -637,10 +691,11 @@ export default function StandaloneShell({
 
       const stored = await loadClientSecret(storageKey);
       const legacy = !stored && !userId ? localStorage.getItem(STORAGE_KEY) : null;
-      const key =
-        stored ||
-        legacy ||
-        (platformMuapiKeyConfigured ? PLATFORM_MANAGED_MUAPI_KEY : null);
+      const hostedKey =
+        owebBillingEnabled && userId ? OWEB_HOSTED_CLIENT_KEY : null;
+      const platformKey =
+        platformMuapiKeyConfigured ? PLATFORM_MANAGED_MUAPI_KEY : null;
+      const key = stored || legacy || hostedKey || platformKey;
       if (key) {
         setApiKey(key);
         fetchBalance(key);
@@ -659,6 +714,7 @@ export default function StandaloneShell({
     apiProviders,
     userId,
     platformMuapiKeyConfigured,
+    owebBillingEnabled,
   ]);
 
   useEffect(() => {
@@ -705,7 +761,10 @@ export default function StandaloneShell({
   const handleKeyChange = useCallback(() => {
     void removeClientSecret(storageKey);
     if (!userId) localStorage.removeItem(STORAGE_KEY);
-    if (platformMuapiKeyConfigured) {
+    if (owebBillingEnabled && userId) {
+      setApiKey(OWEB_HOSTED_CLIENT_KEY);
+      void fetchBalance(OWEB_HOSTED_CLIENT_KEY);
+    } else if (platformMuapiKeyConfigured) {
       setApiKey(PLATFORM_MANAGED_MUAPI_KEY);
       void fetchBalance(PLATFORM_MANAGED_MUAPI_KEY);
     } else {
@@ -713,11 +772,14 @@ export default function StandaloneShell({
       setBalance(null);
     }
     syncMuapiKeyCookie(null);
-  }, [storageKey, userId, platformMuapiKeyConfigured, fetchBalance]);
+  }, [storageKey, userId, platformMuapiKeyConfigured, owebBillingEnabled, fetchBalance]);
 
   const handleSignOut = useCallback(async () => {
     try {
       sessionStorage.removeItem('ogi_workspace_cookie_sync');
+      for (const key of Object.keys(sessionStorage)) {
+        if (key.startsWith('ogi_asset_backfill_')) sessionStorage.removeItem(key);
+      }
       const supabase = createClient();
       await supabase.auth.signOut();
     } catch {
@@ -740,7 +802,11 @@ export default function StandaloneShell({
       const isRelative = config.url.startsWith('/') || !config.url.startsWith('http');
       const isInternalProxy = config.url.includes('/api/app') || config.url.includes('/api/workflow') || config.url.includes('/api/agents') || config.url.includes('/api/api') || config.url.includes('/api/v1');
 
-      if ((isRelative || isInternalProxy) && !isPlatformManagedMuapiKey(apiKey)) {
+      if (
+        (isRelative || isInternalProxy) &&
+        !isPlatformManagedMuapiKey(apiKey) &&
+        !isOwebHostedClientKey(apiKey)
+      ) {
         config.headers['x-api-key'] = apiKey;
       }
       
@@ -804,6 +870,13 @@ export default function StandaloneShell({
   );
 
   if (!apiKey) {
+    if ((owebBillingEnabled && userId) || platformMuapiKeyConfigured) {
+      return (
+        <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+          <div className="animate-spin text-[#22d3ee] text-3xl">◌</div>
+        </div>
+      );
+    }
     return (
       <ApiKeyModal
         onSave={handleKeySave}
@@ -909,16 +982,7 @@ export default function StandaloneShell({
             </div>
 
             {/* Logo & Title */}
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-[#22d3ee] rounded-lg flex items-center justify-center shadow-lg shadow-[#22d3ee]/20">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-              </div>
-              <span className="text-sm font-bold tracking-tight hidden sm:block text-white">
-                {copy.shell.brand}
-              </span>
-            </div>
+            <BrandLogo size={32} showName nameClassName="hidden sm:block" />
           </div>
 
           {/* Active Tab Breadcrumb Badge */}
@@ -938,6 +1002,15 @@ export default function StandaloneShell({
               </span>
             </div>
 
+            {userId && teamPath && (
+              <a
+                href={teamPath}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 text-[13px] font-bold text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors no-underline"
+              >
+                {copy.teamPage?.navShort || 'Team'}
+              </a>
+            )}
+
             <button
               onClick={() => setShowSettings(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 text-[13px] font-bold text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
@@ -951,6 +1024,15 @@ export default function StandaloneShell({
             </button>
           </div>
         </header>
+      )}
+
+      {hasUnactivatedTeam && userId && (
+        <div className="shrink-0 px-4 py-2.5 bg-[#d9ff00]/10 border-b border-[#d9ff00]/20 text-center">
+          <a href={teamPath} className="text-xs font-bold text-[#d9ff00] hover:underline">
+            {copy.teamPage?.banner ||
+              'You have team workspaces that are not activated for Open Generative AI yet. Activate them here →'}
+          </a>
+        </div>
       )}
 
       {/* Main Body Layout: Left Sidebar + Studio Content Area */}
@@ -1113,14 +1195,48 @@ export default function StandaloneShell({
           key={storageScope ?? 'local'}
           className="flex-1 min-h-0 h-full relative overflow-hidden bg-[#030303]"
         >
+        <div className={activeTab === 'library' ? 'h-full w-full' : 'hidden'}>
+          <AssetLibraryStudio
+            items={workspaceAssets.allGenerations}
+            loading={workspaceAssets.enabled && !workspaceAssets.ready}
+            error={workspaceAssets.loadError}
+            onOpenInStudio={handleOpenAssetInStudio}
+            copy={copy}
+          />
+        </div>
         <div className={activeTab === 'image' ? "h-full w-full" : "hidden"}>
-          <ImageStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('image')} onGenerationEnd={makeGenerationEndCallback('image')} onGenerationComplete={makeSuccessCallback('image')} onGenerationError={makeErrorCallback('image')} />
+          <ImageStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('image')}
+            onGenerationEnd={makeGenerationEndCallback('image')}
+            onGenerationComplete={makeSuccessCallback('image')}
+            onGenerationError={makeErrorCallback('image')}
+            historyItems={workspaceAssets.historyForStudio('image')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('image') : undefined}
+          />
         </div>
         <div className={activeTab === 'layers' ? "h-full w-full" : "hidden"}>
           <LayersStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('layers')} onGenerationEnd={makeGenerationEndCallback('layers')} onGenerationComplete={makeSuccessCallback('layers')} onGenerationError={makeErrorCallback('layers')} />
         </div>
         <div className={activeTab === 'video' ? "h-full w-full" : "hidden"}>
-          <VideoStudio apiKey={apiKey} storageScope={storageScope} apiProviderId={providerId} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('video')} onGenerationEnd={makeGenerationEndCallback('video')} onGenerationComplete={makeSuccessCallback('video')} onGenerationError={makeErrorCallback('video')} />
+          <VideoStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            apiProviderId={providerId}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('video')}
+            onGenerationEnd={makeGenerationEndCallback('video')}
+            onGenerationComplete={makeSuccessCallback('video')}
+            onGenerationError={makeErrorCallback('video')}
+            historyItems={workspaceAssets.historyForStudio('video')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('video') : undefined}
+          />
         </div>
         <div className={activeTab === 'clipping' ? "h-full w-full" : "hidden"}>
           <ClippingStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('clipping')} onGenerationEnd={makeGenerationEndCallback('clipping')} onGenerationComplete={makeSuccessCallback('clipping')} onGenerationError={makeErrorCallback('clipping')} />
@@ -1132,19 +1248,65 @@ export default function StandaloneShell({
           <VibeMotionStudio apiKey={apiKey} storageScope={storageScope} locale={locale} onGenerationStart={makeGenerationStartCallback('vibe-motion')} onGenerationEnd={makeGenerationEndCallback('vibe-motion')} onGenerationComplete={makeSuccessCallback('vibe-motion')} onGenerationError={makeErrorCallback('vibe-motion')} />
         </div>
         <div className={activeTab === 'lipsync' ? "h-full w-full" : "hidden"}>
-          <LipSyncStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('lipsync')} onGenerationEnd={makeGenerationEndCallback('lipsync')} onGenerationComplete={makeSuccessCallback('lipsync')} onGenerationError={makeErrorCallback('lipsync')} />
+          <LipSyncStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('lipsync')}
+            onGenerationEnd={makeGenerationEndCallback('lipsync')}
+            onGenerationComplete={makeSuccessCallback('lipsync')}
+            onGenerationError={makeErrorCallback('lipsync')}
+            historyItems={workspaceAssets.historyForStudio('lipsync')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('lipsync') : undefined}
+          />
         </div>
         <div className={activeTab === 'body-swap' ? "h-full w-full" : "hidden"}>
           <RecastStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('body-swap')} onGenerationEnd={makeGenerationEndCallback('body-swap')} onGenerationComplete={makeSuccessCallback('body-swap')} onGenerationError={makeErrorCallback('body-swap')} />
         </div>
         <div className={activeTab === 'cinema' ? "h-full w-full" : "hidden"}>
-          <CinemaStudio apiKey={apiKey} storageScope={storageScope} locale={locale} onGenerationStart={makeGenerationStartCallback('cinema')} onGenerationEnd={makeGenerationEndCallback('cinema')} onGenerationComplete={makeSuccessCallback('cinema')} onGenerationError={makeErrorCallback('cinema')} />
+          <CinemaStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            onGenerationStart={makeGenerationStartCallback('cinema')}
+            onGenerationEnd={makeGenerationEndCallback('cinema')}
+            onGenerationComplete={makeSuccessCallback('cinema')}
+            onGenerationError={makeErrorCallback('cinema')}
+            historyItems={workspaceAssets.historyForStudio('cinema')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('cinema') : undefined}
+          />
         </div>
         <div className={activeTab === 'audio' ? "h-full w-full" : "hidden"}>
-          <AudioStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('audio')} onGenerationEnd={makeGenerationEndCallback('audio')} onGenerationComplete={makeSuccessCallback('audio')} onGenerationError={makeErrorCallback('audio')} />
+          <AudioStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('audio')}
+            onGenerationEnd={makeGenerationEndCallback('audio')}
+            onGenerationComplete={makeSuccessCallback('audio')}
+            onGenerationError={makeErrorCallback('audio')}
+            historyItems={workspaceAssets.historyForStudio('audio')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('audio') : undefined}
+          />
         </div>
         <div className={activeTab === 'marketing' ? "h-full w-full" : "hidden"}>
-          <MarketingStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('marketing')} onGenerationEnd={makeGenerationEndCallback('marketing')} onGenerationComplete={makeSuccessCallback('marketing')} onGenerationError={makeErrorCallback('marketing')} />
+          <MarketingStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('marketing')}
+            onGenerationEnd={makeGenerationEndCallback('marketing')}
+            onGenerationComplete={makeSuccessCallback('marketing')}
+            onGenerationError={makeErrorCallback('marketing')}
+            historyItems={workspaceAssets.historyForStudio('marketing')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('marketing') : undefined}
+          />
         </div>
         <div className={activeTab === 'workflows' ? "h-full w-full" : "hidden"}>
           <WorkflowStudio
@@ -1313,9 +1475,9 @@ export default function StandaloneShell({
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
+          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             <h2 className="text-white font-bold text-lg mb-2">{copy.settingsModal.title}</h2>
-            <p className="text-white/40 text-[13px] mb-8">
+            <p className="text-white/40 text-[13px] mb-4">
               {copy.settingsModal.subtitle}
             </p>
 
@@ -1326,13 +1488,65 @@ export default function StandaloneShell({
               </p>
             )}
 
-            {userId && workspaces.length > 0 && (
+            {userId && (
               <WorkspaceSwitcher
-                workspaces={workspaces}
+                workspaces={activatedWorkspaces.length ? activatedWorkspaces : workspaces.filter((w) => w.id === workspaceId)}
                 activeWorkspaceId={workspaceId}
+                teamPath={teamPath}
               />
             )}
 
+            {userId && (
+              <div className="flex gap-1 mb-6 mt-4 border-b border-white/10 pb-2">
+                {[
+                  { id: 'studio', label: copy.settingsModal.tabStudio || 'Studio' },
+                  { id: 'team', label: copy.settingsModal.tabTeam || 'Team' },
+                  { id: 'activity', label: copy.settingsModal.tabActivity || 'Activity' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSettingsSection(tab.id)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                      settingsSection === tab.id
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {settingsSection === 'team' && userId ? (
+              <div className="mb-8">
+                {teamPath && (
+                  <a
+                    href={teamPath}
+                    className="inline-block mb-4 text-xs font-bold text-[#22d3ee] hover:underline"
+                  >
+                    {copy.teamPage?.openFullPage || 'Open team workspaces page →'}
+                  </a>
+                )}
+                <TeamPanel
+                  workspaceId={workspaceId}
+                  userId={userId}
+                  workspaces={workspaces}
+                  copy={copy}
+                  currentUserOneId={oneId}
+                  onTeamWorkspaceCreated={() => router.refresh()}
+                />
+              </div>
+            ) : settingsSection === 'activity' && userId ? (
+              <div className="mb-8">
+                <WorkspaceActivityPanel
+                  workspaceId={workspaceId}
+                  userId={userId}
+                  copy={copy}
+                />
+              </div>
+            ) : (
             <div className="space-y-4 mb-8">
               {apiProviders.length > 0 && (
                 <ApiProviderSelect
@@ -1355,25 +1569,60 @@ export default function StandaloneShell({
                   {copy.settingsModal.comfyRunpodKeyHint}
                 </p>
               ) : null}
-              <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
-                <label className="block text-xs font-bold text-white/30 mb-2">
-                   {copy.settingsModal.activeApiKey}
-                </label>
-                <div className="text-[13px] font-mono text-white/80">
-                  {isPlatformManagedMuapiKey(apiKey)
-                    ? (copy.settingsModal.platformApiKey || 'Managed on server (MUAPI_KEY)')
-                    : `${apiKey.slice(0, 8)}••••••••••••••••`}
+              {owebBillingEnabled && isOwebHostedClientKey(apiKey) ? (
+                <div className="bg-white/5 border border-[#d9ff00]/15 rounded-md p-4 space-y-3">
+                  <p className="text-xs font-bold text-[#d9ff00]/90">
+                    {copy.settingsModal.owebWalletTitle || 'OWeb workspace wallet (OneCredits)'}
+                  </p>
+                  <p className="text-[11px] text-white/45 leading-relaxed">
+                    {copy.settingsModal.owebWalletHint ||
+                      'Generations debit the active workspace balance on OWeb — the same credits your team uses in One OS.'}
+                  </p>
+                  {balance != null && (
+                    <p className="text-sm font-mono text-white/90">
+                      {copy.settingsModal.balanceLabel || 'Balance'}: {balance}
+                    </p>
+                  )}
+                  <a
+                    href={`${getOwebAppUrl()}/billing`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex text-xs font-bold text-[#d9ff00] hover:underline"
+                  >
+                    {copy.settingsModal.owebBillingCta || 'Manage billing & top up on OWeb'}
+                  </a>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
+                  <label className="block text-xs font-bold text-white/30 mb-2">
+                    {copy.settingsModal.activeApiKey}
+                  </label>
+                  <div className="text-[13px] font-mono text-white/80">
+                    {isPlatformManagedMuapiKey(apiKey)
+                      ? (copy.settingsModal.platformApiKey || 'Managed on server (MUAPI_KEY)')
+                      : `${apiKey?.slice(0, 8)}••••••••••••••••`}
+                  </div>
+                </div>
+              )}
+              {userId && workspaceId && (
+                <p className="text-[11px] text-white/35 leading-relaxed">
+                  {copy.settingsModal.cloudHistoryHint ||
+                    'Signed-in videos are saved to your workspace and reload after logout.'}
+                </p>
+              )}
             </div>
+            )}
 
             <div className="flex gap-3">
-              <button
-                onClick={handleKeyChange}
-                className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
-              >
-                {copy.settingsModal.changeKey}
-              </button>
+              {!(owebBillingEnabled && isOwebHostedClientKey(apiKey)) &&
+                !isPlatformManagedMuapiKey(apiKey) && (
+                <button
+                  onClick={handleKeyChange}
+                  className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
+                >
+                  {copy.settingsModal.changeKey}
+                </button>
+              )}
               {userId && (
                 <button
                   type="button"
@@ -1393,6 +1642,8 @@ export default function StandaloneShell({
           </div>
         </div>
       )}
+
+      <LegalFooter className="flex-shrink-0 bg-[#0a0a0b]/80" />
     </div>
   );
 }
