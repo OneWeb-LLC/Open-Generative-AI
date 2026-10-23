@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 import LegalFooter from '@/components/legal/LegalFooter';
-import { getMarketingCopy } from '@/lib/marketing/copy';
-import { marketingPath } from '@/lib/marketing/copy';
+import { getMarketingCopy, marketingPath } from '@/lib/marketing/copy';
 
 export default function LegalChrome({ children }) {
   const copy = getMarketingCopy('en');
