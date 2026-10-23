@@ -781,6 +781,7 @@ function ModelDropdown({ selectedModel, onSelect, onClose, copy = en }) {
 
 export default function VideoStudio({
   apiKey,
+  storageScope = null,
   apiProviderId = "muapi-proxy",
   onGenerationStart,
   onGenerationEnd,
@@ -794,7 +795,7 @@ export default function VideoStudio({
 }) {
   const copy = useMemo(() => resolveCopy(en, zh, locale), [locale]);
   const LEGACY_PERSIST_KEY = "hg_video_studio_persistent";
-  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey);
+  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey, storageScope);
   useEffect(() => {
     migrateLegacyPersistKey(LEGACY_PERSIST_KEY, PERSIST_KEY);
   }, [PERSIST_KEY]);

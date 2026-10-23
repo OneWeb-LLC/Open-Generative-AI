@@ -9,7 +9,7 @@ export default function LoginPage() {
       <div className="hidden md:flex flex-col justify-between p-12 border-r border-white/5">
         <div>
           <p className="text-xs tracking-[0.2em] text-white/40 uppercase">OWeb Satellite</p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight">Open Higgsfield AI</h1>
+          <h1 className="mt-4 text-4xl font-black tracking-tight">Open Generative AI</h1>
           <p className="mt-4 max-w-md text-white/60">
             AI image, video, cinema, and lip sync — shared OneID with OWeb. Your MuAPI key stays
             yours (BYOK).

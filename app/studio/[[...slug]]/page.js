@@ -34,6 +34,7 @@ export default async function StudioPage() {
   }
 
   let workspaceId = null;
+  let workspaces = [];
   let oneIdLabel = null;
 
   if (user) {
@@ -46,6 +47,7 @@ export default async function StudioPage() {
       persistCookie: false,
     });
     workspaceId = ctx.workspaceId;
+    workspaces = ctx.workspaces ?? [];
     const handle =
       oneIdFromUserMetadata(user) ?? (await fetchOneIdHandle(supabase, user.id));
     oneIdLabel = formatOneId(handle);
@@ -58,6 +60,7 @@ export default async function StudioPage() {
       userEmail={user?.email ?? null}
       oneId={oneIdLabel}
       workspaceId={workspaceId}
+      workspaces={workspaces}
     />
   );
 }

@@ -1,12 +1,66 @@
+import { redirect } from 'next/navigation';
 import StandaloneShell from '@/components/StandaloneShell';
+import { getDefaultApiProviderId, getPublicApiProviders } from '@/lib/ogi/api-providers';
+import { isAuthRequired } from '@/lib/ogi/constants';
+import { formatOneId, fetchOneIdHandle, oneIdFromUserMetadata } from '@/lib/oneid';
+import { createClient } from '@/lib/supabase/server';
+import { establishProductSession } from '@/lib/workspace/session.server';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Studio — Open Generative AI',
 };
 
-// Additive locale route wrapper: reuses the exact same shell component as
-// app/studio/[[...slug]]/page.js, only passing `locale="zh"`. A future
-// locale repeats this file under app/<locale>/studio/[[...slug]]/page.js.
-export default function ZhStudioPage() {
-  return <StandaloneShell locale="zh" />;
+export default async function ZhStudioPage() {
+  const apiProviders = getPublicApiProviders();
+  const defaultProviderId = getDefaultApiProviderId();
+  const shellProps = { apiProviders, defaultProviderId, locale: 'zh' };
+
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch {
+    if (isAuthRequired()) redirect('/login?next=/zh/studio');
+    return <StandaloneShell {...shellProps} />;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isAuthRequired() && !user) {
+    redirect('/login?next=/zh/studio');
+  }
+
+  let workspaceId = null;
+  let workspaces = [];
+  let oneIdLabel = null;
+
+  if (user) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const ctx = await establishProductSession(supabase, user, {
+      accessToken: session?.access_token ?? null,
+      activationKind: 'sign_in',
+      persistCookie: false,
+    });
+    workspaceId = ctx.workspaceId;
+    workspaces = ctx.workspaces ?? [];
+    const handle =
+      oneIdFromUserMetadata(user) ?? (await fetchOneIdHandle(supabase, user.id));
+    oneIdLabel = formatOneId(handle);
+  }
+
+  return (
+    <StandaloneShell
+      {...shellProps}
+      userId={user?.id ?? null}
+      userEmail={user?.email ?? null}
+      oneId={oneIdLabel}
+      workspaceId={workspaceId}
+      workspaces={workspaces}
+    />
+  );
 }

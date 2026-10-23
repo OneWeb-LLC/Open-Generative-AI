@@ -19,7 +19,7 @@ test('centralized redeem URL and app_id contract', () => {
     'https://oweb.one/api/v1/ecosystem/redeem-launch-token',
   );
   const constants = readFileSync(resolve(root, 'lib/ogi/constants.js'), 'utf8');
-  assert.match(constants, /OGI_APP_ID = 'open-higgsfield-ai'/);
+  assert.match(constants, /OGI_APP_ID = 'open-generative-ai'/);
 });
 
 test('mapRedeemErrorFromResponse normalizes OWeb errors', () => {

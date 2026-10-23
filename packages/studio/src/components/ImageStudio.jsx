@@ -968,6 +968,7 @@ function SimpleDropdown({ title, options, selected, onSelect, onClose }) {
 
 export default function ImageStudio({
   apiKey,
+  storageScope = null,
   onGenerationStart,
   onGenerationEnd,
   onGenerationComplete,
@@ -980,7 +981,7 @@ export default function ImageStudio({
 }) {
   const copy = resolveCopy(en, zh, locale);
   const LEGACY_PERSIST_KEY = "hg_image_studio_persistent";
-  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey);
+  const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey, storageScope);
   useEffect(() => {
     migrateLegacyPersistKey(LEGACY_PERSIST_KEY, PERSIST_KEY);
   }, [PERSIST_KEY]);
