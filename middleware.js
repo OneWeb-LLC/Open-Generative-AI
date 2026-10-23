@@ -6,6 +6,10 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
+    '/',
+    '/features',
+    '/zh',
+    '/zh/features',
     '/studio/:path*',
     '/zh/studio/:path*',
     '/agents/:path*',
