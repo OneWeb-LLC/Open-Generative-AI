@@ -2,6 +2,7 @@
 
 `app_id`: **open-generative-ai**  
 Activation scope: **workspace**  
+Production origin: **https://artemiis.one**  
 Auth host: **https://auth.oweb.one**  
 Control plane: **https://oweb.one**
 
@@ -38,8 +39,8 @@ See `.env.example` and `ENV_AUDIT.md`. Never commit service role keys.
 
 Apply all SQL in `supabase/migrations/` on the shared One OS project (profiles + workspace preferences).
 
-## Control-plane registration (separate PR)
+## Control-plane registration
 
-Register `open-generative-ai` in OWeb `ecosystem-apps.ts` with `activationScope: "workspace"` and production `launchUrl` before marking the app live in the App Store.
+OWeb `ecosystem-apps.ts` registers this satellite with `activationScope: "workspace"` and production `launchUrl` **`https://artemiis.one`** (must match `NEXT_PUBLIC_APP_URL` / `APP_URL` on Vercel).
 
 Canonical contracts: OneWeb-LLC/oweb `docs/SATELLITE_ONBOARDING_KIT.md`, `docs/SATELLITE_AUTH_RETURN.md`.
