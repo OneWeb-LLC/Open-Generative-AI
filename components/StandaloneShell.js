@@ -334,6 +334,9 @@ export default function StandaloneShell({
   oneId = null,
   workspaceId = null,
   workspaces = [],
+  activatedWorkspaces = [],
+  hasUnactivatedTeam = false,
+  teamPath = '/studio/team',
   apiProviders = [],
   defaultProviderId = 'muapi-proxy',
   owebBillingEnabled = false,
@@ -977,6 +980,15 @@ export default function StandaloneShell({
               </span>
             </div>
 
+            {userId && teamPath && (
+              <a
+                href={teamPath}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 text-[13px] font-bold text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors no-underline"
+              >
+                {copy.teamPage?.navShort || 'Team'}
+              </a>
+            )}
+
             <button
               onClick={() => setShowSettings(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-white/10 bg-white/5 text-[13px] font-bold text-white/80 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
@@ -990,6 +1002,15 @@ export default function StandaloneShell({
             </button>
           </div>
         </header>
+      )}
+
+      {hasUnactivatedTeam && userId && (
+        <div className="shrink-0 px-4 py-2.5 bg-[#d9ff00]/10 border-b border-[#d9ff00]/20 text-center">
+          <a href={teamPath} className="text-xs font-bold text-[#d9ff00] hover:underline">
+            {copy.teamPage?.banner ||
+              'You have team workspaces that are not activated for Open Generative AI yet. Activate them here →'}
+          </a>
+        </div>
       )}
 
       {/* Main Body Layout: Left Sidebar + Studio Content Area */}
@@ -1445,10 +1466,11 @@ export default function StandaloneShell({
               </p>
             )}
 
-            {userId && workspaces.length > 0 && (
+            {userId && (
               <WorkspaceSwitcher
-                workspaces={workspaces}
+                workspaces={activatedWorkspaces.length ? activatedWorkspaces : workspaces.filter((w) => w.id === workspaceId)}
                 activeWorkspaceId={workspaceId}
+                teamPath={teamPath}
               />
             )}
 
@@ -1477,6 +1499,14 @@ export default function StandaloneShell({
 
             {settingsSection === 'team' && userId ? (
               <div className="mb-8">
+                {teamPath && (
+                  <a
+                    href={teamPath}
+                    className="inline-block mb-4 text-xs font-bold text-[#22d3ee] hover:underline"
+                  >
+                    {copy.teamPage?.openFullPage || 'Open team workspaces page →'}
+                  </a>
+                )}
                 <TeamPanel
                   workspaceId={workspaceId}
                   userId={userId}

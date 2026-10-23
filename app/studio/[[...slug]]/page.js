@@ -2,9 +2,9 @@ import { redirect } from 'next/navigation';
 import StandaloneShell from '@/components/StandaloneShell';
 import { getStudioShellProps } from '@/lib/ogi/studio-shell-props.server';
 import { isAuthRequired } from '@/lib/ogi/constants';
-import { formatOneId, fetchOneIdHandle, oneIdFromUserMetadata } from '@/lib/oneid';
 import { createClient } from '@/lib/supabase/server';
-import { establishProductSession } from '@/lib/workspace/session.server';
+import { loadStudioPageContext } from '@/lib/workspace/studio-page-context.server';
+import { localizeTeamPath } from '@/lib/locales';
 import { pageTitle } from '@/lib/ogi/branding';
 
 export const dynamic = 'force-dynamic';
@@ -34,22 +34,17 @@ export default async function StudioPage() {
 
   let workspaceId = null;
   let workspaces = [];
+  let activatedWorkspaces = [];
+  let hasUnactivatedTeam = false;
   let oneIdLabel = null;
 
   if (user) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const ctx = await establishProductSession(supabase, user, {
-      accessToken: session?.access_token ?? null,
-      activationKind: 'sign_in',
-      persistCookie: true,
-    });
+    const ctx = await loadStudioPageContext(supabase, user);
     workspaceId = ctx.workspaceId;
     workspaces = ctx.workspaces ?? [];
-    const handle =
-      oneIdFromUserMetadata(user) ?? (await fetchOneIdHandle(supabase, user.id));
-    oneIdLabel = formatOneId(handle);
+    activatedWorkspaces = ctx.activatedWorkspaces ?? [];
+    hasUnactivatedTeam = ctx.hasUnactivatedTeam ?? false;
+    oneIdLabel = ctx.oneIdLabel;
   }
 
   return (
@@ -60,6 +55,9 @@ export default async function StudioPage() {
       oneId={oneIdLabel}
       workspaceId={workspaceId}
       workspaces={workspaces}
+      activatedWorkspaces={activatedWorkspaces}
+      hasUnactivatedTeam={hasUnactivatedTeam}
+      teamPath={localizeTeamPath('en')}
     />
   );
 }

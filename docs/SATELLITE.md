@@ -28,8 +28,8 @@ Each OWeb **workspace** (`ao_orgs`) is a tenant. The active workspace is stored 
 | Generative billing (production) | `NEXT_PUBLIC_OGI_USE_OWEB_BILLING=true` → studio calls `/api/oweb-studio/generative/*` → OWeb meters workspace OneCredits |
 | BYOK MuAPI keys | Optional when OWeb billing is off; browser storage keyed by `userId` + `workspaceId` |
 | Studio drafts/history | `localStorage` scoped per workspace (`storageScope` on studio components) |
-| Durable outputs (all studios) | `ogi_workspace_generations` + **Asset Library** tab; auto backfill from local history on sign-in |
-| Team management | Settings → **Team** / **Activity**; invites via One OS (OneID); `GET/POST /api/workspace/*` |
+| Durable outputs (all studios) | `ogi_workspace_generations` + **Asset Library** tab; auto backfill from local history on sign-in; logout-safe for workspace members |
+| Team management | **`/studio/team`** — workspace catalog (membership ∩ activation); **Activate here** → `one_id_workspace_activations`; switcher lists activated workspaces only; Settings **Team** / **Activity**; invites via One OS (OneID); `GET/POST /api/workspace/*` |
 | Server preferences | `ogi_workspace_preferences` — RLS via inline `ao_org_members` membership |
 
 ## Environment
