@@ -19,11 +19,9 @@ import { tenantStorageScope } from '@/lib/ogi/tenant-storage';
 import WorkspaceSwitcher from '@/components/WorkspaceSwitcher';
 import TeamPanel from '@/components/TeamPanel';
 import WorkspaceActivityPanel from '@/components/WorkspaceActivityPanel';
-import {
-  deleteWorkspaceGenerationRecord,
-  fetchWorkspaceGenerations,
-  persistWorkspaceGeneration,
-} from '@/lib/ogi/workspace-generations-client';
+import { useWorkspaceAssets } from '@/lib/ogi/useWorkspaceAssets';
+import { TAB_TO_STUDIO_TYPE } from '@/lib/ogi/workspace-assets';
+import AssetLibraryStudio from '@/components/AssetLibraryStudio';
 import BrandLogo from '@/components/BrandLogo';
 import LegalFooter from '@/components/legal/LegalFooter';
 import { applyGenerativeProvider } from '@/lib/ogi/apply-generative-provider';
@@ -40,6 +38,17 @@ import {
 // inside the component below, with these English strings as the fallback
 // when a locale bundle is missing the key.
 const TABS = [
+  {
+    id: 'library',
+    label: 'Asset Library',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
+        <path d="M8 7h8M8 11h8"/>
+      </svg>
+    )
+  },
   {
     id: 'image',
     label: 'Image Studio',
@@ -232,7 +241,7 @@ const NAVIGATION_CATEGORIES = [
   {
     id: 'images',
     label: 'Images',
-    tabIds: ['image', 'layers', 'cinema', 'design-agent', 'ai-influencer'],
+    tabIds: ['library', 'image', 'layers', 'cinema', 'design-agent', 'ai-influencer'],
     icon: (
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -396,10 +405,16 @@ export default function StandaloneShell({
   const [apiKey, setApiKey] = useState(null);
   const [activeTab, setActiveTab] = useState(getInitialTab());
 
+  const workspaceAssets = useWorkspaceAssets({
+    userId,
+    workspaceId,
+    storageScope,
+    apiKey,
+  });
+
   const [balance, setBalance] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsSection, setSettingsSection] = useState('studio');
-  const [videoCloudHistory, setVideoCloudHistory] = useState(null);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
   const [showVadooBanner, setShowVadooBanner] = useState(() => {
@@ -517,31 +532,6 @@ export default function StandaloneShell({
     }
   }, [owebBillingEnabled]);
 
-  const persistVideoToWorkspace = useCallback(async (data) => {
-    if (!userId || !workspaceId || !data?.url) return;
-    try {
-      const body = await persistWorkspaceGeneration({
-        studio_type: 'video',
-        media_url: data.url,
-        external_id: data.requestId || data.id || null,
-        prompt: typeof data.prompt === 'string' ? data.prompt : '',
-        model: typeof data.model === 'string' ? data.model : '',
-        metadata: data.meta && typeof data.meta === 'object' ? data.meta : {},
-      }, workspaceId);
-      const entry = body.historyEntry;
-      if (!entry) return;
-      setVideoCloudHistory((previous) => {
-        const list = previous ?? [];
-        const withoutDup = list.filter(
-          (item) => item.recordId !== entry.recordId && item.id !== entry.id,
-        );
-        return [entry, ...withoutDup].slice(0, 100);
-      });
-    } catch (err) {
-      console.warn('[ogi] workspace video persist failed', err);
-    }
-  }, [userId, workspaceId]);
-
   const makeSuccessCallback = useCallback((tabId) => (data) => {
     const tab = TABS.find(t => t.id === tabId);
     pushNotification({
@@ -550,55 +540,16 @@ export default function StandaloneShell({
       label: tab?.label || tabId,
       resultUrl: data?.url || null,
     });
-    if (tabId === 'video') {
-      void persistVideoToWorkspace(data);
-    }
-  }, [persistVideoToWorkspace, pushNotification]);
+    void workspaceAssets.persistCompletion(data, tabId);
+  }, [pushNotification, workspaceAssets]);
 
-  const handleDeleteVideoHistoryItem = useCallback(async (entry) => {
-    const recordId = entry?.recordId;
-    if (recordId && userId && workspaceId) {
-      try {
-        await deleteWorkspaceGenerationRecord(recordId, workspaceId);
-      } catch (err) {
-        console.warn('[ogi] workspace video delete failed', err);
-      }
-    }
-    setVideoCloudHistory((previous) => {
-      if (!previous) return previous;
-      return previous.filter(
-        (item) => item.recordId !== recordId && item.id !== entry?.id,
-      );
-    });
-  }, [userId, workspaceId]);
+  const makeDeleteHistoryCallback = useCallback(
+    (studioType) => async (entry) => {
+      await workspaceAssets.deleteHistoryItem(studioType, entry);
+    },
+    [workspaceAssets],
+  );
 
-  useEffect(() => {
-    if (!userId || !workspaceId) {
-      setVideoCloudHistory(null);
-      return;
-    }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const body = await fetchWorkspaceGenerations({
-          workspaceId,
-          studioType: 'video',
-          limit: 100,
-        });
-        if (!cancelled) {
-          setVideoCloudHistory(body.history ?? []);
-        }
-      } catch (err) {
-        console.warn('[ogi] workspace video history load failed', err);
-        if (!cancelled) setVideoCloudHistory([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, workspaceId, storageScope]);
 
   const makeErrorCallback = useCallback((tabId) => (errorOrMessage) => {
     const tab = TABS.find(t => t.id === tabId);
@@ -663,6 +614,13 @@ export default function StandaloneShell({
     window.history.pushState(null, '', studioPath(tabId));
     setActiveTab(tabId);
   }, [studioPath]);
+
+  const handleOpenAssetInStudio = useCallback((studioType) => {
+    const tabId =
+      Object.entries(TAB_TO_STUDIO_TYPE).find(([, type]) => type === studioType)?.[0] ||
+      (studioType === 'image' || studioType === 'cinema' ? 'image' : 'video');
+    handleTabChange(tabId);
+  }, [handleTabChange]);
 
   const handleOpenNotification = useCallback((notification) => {
     handleTabChange(notification.tabId);
@@ -801,6 +759,9 @@ export default function StandaloneShell({
   const handleSignOut = useCallback(async () => {
     try {
       sessionStorage.removeItem('ogi_workspace_cookie_sync');
+      for (const key of Object.keys(sessionStorage)) {
+        if (key.startsWith('ogi_asset_backfill_')) sessionStorage.removeItem(key);
+      }
       const supabase = createClient();
       await supabase.auth.signOut();
     } catch {
@@ -1212,8 +1173,29 @@ export default function StandaloneShell({
           key={storageScope ?? 'local'}
           className="flex-1 min-h-0 h-full relative overflow-hidden bg-[#030303]"
         >
+        <div className={activeTab === 'library' ? 'h-full w-full' : 'hidden'}>
+          <AssetLibraryStudio
+            items={workspaceAssets.allGenerations}
+            loading={workspaceAssets.enabled && !workspaceAssets.ready}
+            error={workspaceAssets.loadError}
+            onOpenInStudio={handleOpenAssetInStudio}
+            copy={copy}
+          />
+        </div>
         <div className={activeTab === 'image' ? "h-full w-full" : "hidden"}>
-          <ImageStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('image')} onGenerationEnd={makeGenerationEndCallback('image')} onGenerationComplete={makeSuccessCallback('image')} onGenerationError={makeErrorCallback('image')} />
+          <ImageStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('image')}
+            onGenerationEnd={makeGenerationEndCallback('image')}
+            onGenerationComplete={makeSuccessCallback('image')}
+            onGenerationError={makeErrorCallback('image')}
+            historyItems={workspaceAssets.historyForStudio('image')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('image') : undefined}
+          />
         </div>
         <div className={activeTab === 'layers' ? "h-full w-full" : "hidden"}>
           <LayersStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('layers')} onGenerationEnd={makeGenerationEndCallback('layers')} onGenerationComplete={makeSuccessCallback('layers')} onGenerationError={makeErrorCallback('layers')} />
@@ -1230,8 +1212,8 @@ export default function StandaloneShell({
             onGenerationEnd={makeGenerationEndCallback('video')}
             onGenerationComplete={makeSuccessCallback('video')}
             onGenerationError={makeErrorCallback('video')}
-            historyItems={userId && workspaceId ? videoCloudHistory : undefined}
-            onDeleteHistoryItem={userId && workspaceId ? handleDeleteVideoHistoryItem : undefined}
+            historyItems={workspaceAssets.historyForStudio('video')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('video') : undefined}
           />
         </div>
         <div className={activeTab === 'clipping' ? "h-full w-full" : "hidden"}>
@@ -1244,19 +1226,65 @@ export default function StandaloneShell({
           <VibeMotionStudio apiKey={apiKey} storageScope={storageScope} locale={locale} onGenerationStart={makeGenerationStartCallback('vibe-motion')} onGenerationEnd={makeGenerationEndCallback('vibe-motion')} onGenerationComplete={makeSuccessCallback('vibe-motion')} onGenerationError={makeErrorCallback('vibe-motion')} />
         </div>
         <div className={activeTab === 'lipsync' ? "h-full w-full" : "hidden"}>
-          <LipSyncStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('lipsync')} onGenerationEnd={makeGenerationEndCallback('lipsync')} onGenerationComplete={makeSuccessCallback('lipsync')} onGenerationError={makeErrorCallback('lipsync')} />
+          <LipSyncStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('lipsync')}
+            onGenerationEnd={makeGenerationEndCallback('lipsync')}
+            onGenerationComplete={makeSuccessCallback('lipsync')}
+            onGenerationError={makeErrorCallback('lipsync')}
+            historyItems={workspaceAssets.historyForStudio('lipsync')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('lipsync') : undefined}
+          />
         </div>
         <div className={activeTab === 'body-swap' ? "h-full w-full" : "hidden"}>
           <RecastStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('body-swap')} onGenerationEnd={makeGenerationEndCallback('body-swap')} onGenerationComplete={makeSuccessCallback('body-swap')} onGenerationError={makeErrorCallback('body-swap')} />
         </div>
         <div className={activeTab === 'cinema' ? "h-full w-full" : "hidden"}>
-          <CinemaStudio apiKey={apiKey} storageScope={storageScope} locale={locale} onGenerationStart={makeGenerationStartCallback('cinema')} onGenerationEnd={makeGenerationEndCallback('cinema')} onGenerationComplete={makeSuccessCallback('cinema')} onGenerationError={makeErrorCallback('cinema')} />
+          <CinemaStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            onGenerationStart={makeGenerationStartCallback('cinema')}
+            onGenerationEnd={makeGenerationEndCallback('cinema')}
+            onGenerationComplete={makeSuccessCallback('cinema')}
+            onGenerationError={makeErrorCallback('cinema')}
+            historyItems={workspaceAssets.historyForStudio('cinema')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('cinema') : undefined}
+          />
         </div>
         <div className={activeTab === 'audio' ? "h-full w-full" : "hidden"}>
-          <AudioStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('audio')} onGenerationEnd={makeGenerationEndCallback('audio')} onGenerationComplete={makeSuccessCallback('audio')} onGenerationError={makeErrorCallback('audio')} />
+          <AudioStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('audio')}
+            onGenerationEnd={makeGenerationEndCallback('audio')}
+            onGenerationComplete={makeSuccessCallback('audio')}
+            onGenerationError={makeErrorCallback('audio')}
+            historyItems={workspaceAssets.historyForStudio('audio')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('audio') : undefined}
+          />
         </div>
         <div className={activeTab === 'marketing' ? "h-full w-full" : "hidden"}>
-          <MarketingStudio apiKey={apiKey} storageScope={storageScope} locale={locale} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} onGenerationStart={makeGenerationStartCallback('marketing')} onGenerationEnd={makeGenerationEndCallback('marketing')} onGenerationComplete={makeSuccessCallback('marketing')} onGenerationError={makeErrorCallback('marketing')} />
+          <MarketingStudio
+            apiKey={apiKey}
+            storageScope={storageScope}
+            locale={locale}
+            droppedFiles={droppedFiles}
+            onFilesHandled={handleFilesHandled}
+            onGenerationStart={makeGenerationStartCallback('marketing')}
+            onGenerationEnd={makeGenerationEndCallback('marketing')}
+            onGenerationComplete={makeSuccessCallback('marketing')}
+            onGenerationError={makeErrorCallback('marketing')}
+            historyItems={workspaceAssets.historyForStudio('marketing')}
+            onDeleteHistoryItem={workspaceAssets.enabled ? makeDeleteHistoryCallback('marketing') : undefined}
+          />
         </div>
         <div className={activeTab === 'workflows' ? "h-full w-full" : "hidden"}>
           <WorkflowStudio

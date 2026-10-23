@@ -1,5 +1,6 @@
 {
   "tabs": {
+    "library": "Asset Library",
     "image": "Image Studio",
     "layers": "Layers Studio",
     "video": "Video Studio",
@@ -89,6 +90,21 @@
     "inviteFallback": "Use Manage on One OS to send the invite.",
     "memberHint": "Only workspace admins can send invites.",
     "signInRequired": "Sign in with OneID to manage a team."
+  },
+  "library": {
+    "title": "Asset library",
+    "subtitle": "Everything your team saves in this workspace stays here after you sign out. Videos, images, and audio from all studios.",
+    "loading": "Loading assets…",
+    "empty": "No saved assets yet. Sign in, pick a workspace, and generate — outputs sync here automatically.",
+    "open": "Open in studio →",
+    "errorPrefix": "Could not load assets:",
+    "filters": {
+      "all": "All",
+      "image": "Images",
+      "video": "Videos",
+      "audio": "Audio",
+      "other": "Other"
+    }
   },
   "teamActivity": {
     "title": "Team video activity",
