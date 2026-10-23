@@ -6,7 +6,10 @@ export default function BrandLogo({
   showName = false,
   nameClassName = '',
   className = '',
+  variant = 'dark',
 }) {
+  const nameColor =
+    variant === 'light' ? 'text-[#202124] font-medium' : 'text-white font-bold';
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <div
@@ -22,7 +25,7 @@ export default function BrandLogo({
         />
       </div>
       {showName ? (
-        <span className={`text-sm font-bold tracking-tight text-white ${nameClassName}`}>
+        <span className={`text-sm tracking-tight ${nameColor} ${nameClassName}`}>
           {SITE_NAME}
         </span>
       ) : null}

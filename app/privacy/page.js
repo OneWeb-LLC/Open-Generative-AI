@@ -69,15 +69,15 @@ export default function PrivacyPage() {
           <p>
             {SITE_NAME} is operated by {LEGAL_ENTITY} (&quot;we,&quot; &quot;us,&quot; or
             &quot;our&quot;) as an OWeb ecosystem satellite application (app id{' '}
-            <span className="text-white">open-generative-ai</span>).
+            <span className="font-medium text-[#202124]">open-generative-ai</span>).
           </p>
           <p>
             Privacy requests:{' '}
-            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-white hover:underline">
+            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-[#1a73e8] hover:underline">
               {PRIVACY_EMAIL}
             </a>
             . Support:{' '}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-white hover:underline">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-[#1a73e8] hover:underline">
               {SUPPORT_EMAIL}
             </a>
             .
@@ -110,28 +110,28 @@ export default function PrivacyPage() {
           <LegalList
             items={[
               <>
-                <span className="text-white">Account & profile</span> — name, email, user id, and
+                <span className="font-medium text-[#202124]">Account & profile</span> — name, email, user id, and
                 authentication session data from OWeb OneID / Supabase Auth
               </>,
               <>
-                <span className="text-white">Workspace data</span> — workspace membership, role,
+                <span className="font-medium text-[#202124]">Workspace data</span> — workspace membership, role,
                 preferences, and tenant-scoped settings stored in our shared One OS database with
                 app-level isolation
               </>,
               <>
-                <span className="text-white">Creative inputs & outputs</span> — prompts, uploads,
+                <span className="font-medium text-[#202124]">Creative inputs & outputs</span> — prompts, uploads,
                 generated media metadata, and workflow state needed to provide the service
               </>,
               <>
-                <span className="text-white">API configuration</span> — selected API provider and
+                <span className="font-medium text-[#202124]">API configuration</span> — selected API provider and
                 workspace-scoped preference flags (see BYOK section for key storage)
               </>,
               <>
-                <span className="text-white">Device & logs</span> — IP address, browser type,
+                <span className="font-medium text-[#202124]">Device & logs</span> — IP address, browser type,
                 timestamps, error diagnostics, and security logs
               </>,
               <>
-                <span className="text-white">Messaging data (if enabled)</span> — mobile numbers,
+                <span className="font-medium text-[#202124]">Messaging data (if enabled)</span> — mobile numbers,
                 opt-in/opt-out records, message content and delivery metadata for A2P programs you
                 or your organization configure through OWeb communications
               </>,
@@ -211,7 +211,7 @@ export default function PrivacyPage() {
           <p>
             Carriers are not liable for delayed or undelivered messages. See also the SMS section in
             our{' '}
-            <Link href="/terms" className="text-white hover:underline">
+            <Link href="/terms" className="text-[#1a73e8] hover:underline">
               Terms of Service
             </Link>
             .
@@ -306,11 +306,11 @@ export default function PrivacyPage() {
         <LegalSection id="contact" title="17. Contact">
           <p>
             Questions:{' '}
-            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-white hover:underline">
+            <a href={`mailto:${PRIVACY_EMAIL}`} className="text-[#1a73e8] hover:underline">
               {PRIVACY_EMAIL}
             </a>
             . Related:{' '}
-            <Link href="/terms" className="text-white hover:underline">
+            <Link href="/terms" className="text-[#1a73e8] hover:underline">
               Terms of Service
             </Link>
             .
