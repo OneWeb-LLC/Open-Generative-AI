@@ -138,6 +138,16 @@ const LENSES = Object.keys(LENS_MAP);
 const FOCAL_LENGTHS = Object.keys(FOCAL_PERSPECTIVE).map((k) => parseInt(k));
 const APERTURES = Object.keys(APERTURE_EFFECT);
 
+/** Compact labels for the mobile camera chip (avoid "Modular 8K Digit…"). */
+const CAMERA_SHORT_LABEL = {
+  "Modular 8K Digital": "8K Digital",
+  "Full-Frame Cine Digital": "Full-Frame",
+  "Grand Format 70mm Film": "70mm Film",
+  "Studio Digital S35": "Studio S35",
+  "Classic 16mm Film": "16mm Film",
+  "Premium Large Format Digital": "Large Format",
+};
+
 function buildNanoBananaPrompt(
   basePrompt,
   camera,
@@ -325,13 +335,13 @@ function ScrollColumn({ title, items, columnKey, value, onChange }) {
     <section className="flex w-[170px] shrink-0 snap-center flex-col md:w-[190px]">
       <div className="mb-3 flex items-center justify-between px-1">
         <h3 className="text-xs font-semibold text-white/75">{title}</h3>
-        <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-b from-[#22d3ee] to-[#a855f7] shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--ogi-accent,#22d3ee)] shadow-[0_0_6px_var(--ogi-accent-soft,rgba(34,211,238,0.45))]" />
       </div>
 
-      <div className="relative h-[320px] overflow-hidden rounded-2xl border border-white/[0.06] bg-[#030303] shadow-inner">
-        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-[82px] -translate-y-1/2 rounded-xl border border-[#22d3ee]/20 bg-gradient-to-r from-[#22d3ee]/15 to-purple-500/10 shadow-[0_0_15px_rgba(34,211,238,0.1)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-20 bg-gradient-to-b from-[#030303] via-[#030303]/85 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20 bg-gradient-to-t from-[#030303] via-[#030303]/85 to-transparent" />
+      <div className="relative h-[320px] overflow-hidden rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.06))] bg-[color:var(--ogi-canvas,#030303)] shadow-inner">
+        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-[82px] -translate-y-1/2 rounded-xl border border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.2))] bg-[color:var(--ogi-accent-soft,rgba(34,211,238,0.12))]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-20 bg-gradient-to-b from-[color:var(--ogi-canvas,#030303)] via-[color:var(--ogi-canvas,#030303)]/85 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-20 bg-gradient-to-t from-[color:var(--ogi-canvas,#030303)] via-[color:var(--ogi-canvas,#030303)]/85 to-transparent" />
 
         <div
           ref={listRef}
@@ -363,7 +373,7 @@ function ScrollColumn({ title, items, columnKey, value, onChange }) {
                   className={`flex shrink-0 items-center justify-center font-semibold transition-colors ${
                     imageUrl
                       ? "h-10 w-10"
-                      : "text-base text-white/55 group-data-[selected=true]:text-[#22d3ee]"
+                      : "text-base text-[color:var(--ogi-muted,rgba(255,255,255,0.55))] group-data-[selected=true]:text-[color:var(--ogi-accent,#22d3ee)]"
                   }`}
                 >
                   {imageUrl ? (
@@ -380,7 +390,7 @@ function ScrollColumn({ title, items, columnKey, value, onChange }) {
                   )}
                 </span>
                 {columnKey !== "focal" && (
-                  <span className="line-clamp-2 min-w-0 text-[10px] font-medium leading-snug text-white/60 transition-colors group-data-[selected=true]:text-white">
+                  <span className="line-clamp-2 min-w-0 text-[10px] font-medium leading-snug text-[color:var(--ogi-muted,rgba(255,255,255,0.6))] transition-colors group-data-[selected=true]:text-[color:var(--ogi-fg,#fff)]">
                     {item}
                   </span>
                 )}
@@ -436,11 +446,11 @@ function CameraControlsOverlay({
         aria-modal="true"
         aria-labelledby="camera-config-title"
         aria-describedby="camera-config-description"
-        className="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0a0a0b]/95 shadow-[0_24px_100px_rgba(0,0,0,0.75)] backdrop-blur-2xl animate-scale-up"
+        className="flex max-h-[calc(100vh-2rem)] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] bg-[color:var(--ogi-panel-solid,rgba(10,10,11,0.95))] shadow-[var(--ogi-shadow,0_24px_100px_rgba(0,0,0,0.75))] backdrop-blur-2xl animate-scale-up"
       >
-        <div className="flex items-start justify-between border-b border-white/[0.05] px-5 py-5 md:px-7 md:py-6">
+        <div className="flex items-start justify-between border-b border-[color:var(--ogi-border,rgba(255,255,255,0.05))] px-5 py-5 md:px-7 md:py-6">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#22d3ee]">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ogi-accent,#22d3ee)]">
               <svg
                 width="15"
                 height="15"
@@ -459,13 +469,13 @@ function CameraControlsOverlay({
             </div>
             <h2
               id="camera-config-title"
-              className="text-xl font-semibold tracking-tight text-white md:text-2xl"
+              className="text-xl font-semibold tracking-tight text-[color:var(--ogi-fg,#fff)] md:text-2xl"
             >
               {copy.cameraOverlay.title}
             </h2>
             <p
               id="camera-config-description"
-              className="mt-1.5 max-w-2xl text-xs leading-relaxed text-white/45 md:text-sm"
+              className="mt-1.5 max-w-2xl text-xs leading-relaxed text-[color:var(--ogi-muted,rgba(255,255,255,0.55))] md:text-sm"
             >
               {copy.cameraOverlay.description}
             </p>
@@ -475,7 +485,7 @@ function CameraControlsOverlay({
             onClick={onClose}
             aria-label={copy.cameraOverlay.closeAria}
             title={copy.cameraOverlay.close}
-            className="ml-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/40 transition-all hover:border-white/15 hover:bg-white/[0.07] hover:text-white"
+            className="ml-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--ogi-border,rgba(255,255,255,0.06))] bg-[color:var(--ogi-control,rgba(255,255,255,0.03))] text-[color:var(--ogi-muted,rgba(255,255,255,0.45))] transition-all hover:border-[color:var(--ogi-border-strong,rgba(255,255,255,0.15))] hover:bg-[color:var(--ogi-control-hover,rgba(255,255,255,0.07))] hover:text-[color:var(--ogi-fg,#fff)]"
           >
             <svg
               width="16"
@@ -860,18 +870,21 @@ export default function CinemaStudio({
     }
   };
 
+  const cameraChipLabel =
+    CAMERA_SHORT_LABEL[settings.camera] || settings.camera;
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-black relative overflow-hidden">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-[color:var(--ogi-canvas,#030303)] text-[color:var(--ogi-fg,#fff)] relative overflow-hidden">
       
       {/* ── CENTRAL GALLERY AREA ── */}
-      <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
+      <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-44 sm:pb-40 lg:pb-32 px-2">
         {history.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {history.map((entry, idx) => (
               <div
                 key={entry.timestamp ?? idx}
-                className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-[#22d3ee]/50 transition-all duration-300 flex flex-col cursor-pointer"
+                className="relative group rounded-xl overflow-hidden border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] bg-[color:var(--ogi-panel-solid,#0a0a0a)] shadow-xl hover:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.5))] transition-all duration-300 flex flex-col cursor-pointer"
                 onClick={() => setFullscreenUrl(entry.url)}
               >
                 <img
@@ -1030,11 +1043,11 @@ export default function CinemaStudio({
                   </span>
                   <div className="flex items-center mt-1 flex-wrap gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-[#22d3ee] px-2 py-0.5 bg-[#22d3ee]/10 rounded border border-[#22d3ee]/20">
+                      <span className="text-[10px] font-bold text-[color:var(--ogi-accent,#22d3ee)] px-2 py-0.5 bg-[color:var(--ogi-accent-soft,rgba(34,211,238,0.1))] rounded border border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.2))]">
                         {copy.card.badge}
                       </span>
                       {entry.settings?.camera && (
-                        <span className="text-[10px] text-white/40">{entry.settings.camera}</span>
+                        <span className="text-[10px] text-[color:var(--ogi-muted,rgba(255,255,255,0.45))]">{entry.settings.camera}</span>
                       )}
                     </div>
                   </div>
@@ -1045,44 +1058,44 @@ export default function CinemaStudio({
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in-up transition-all duration-700 min-h-[50vh]">
             {/* Overlapping floating cards */}
-            <div className="flex items-center justify-center gap-1.5 md:gap-3 mb-10 select-none scale-90 sm:scale-100">
-              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-white/10 shadow-2xl -rotate-[12deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-white/[0.01] flex-shrink-0">
+            <div className="flex items-center justify-center gap-1.5 md:gap-3 mb-8 sm:mb-10 select-none scale-[0.88] sm:scale-100">
+              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] shadow-2xl -rotate-[12deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-[color:var(--ogi-elevated,rgba(255,255,255,0.02))] flex-shrink-0">
                 <img
                   src="https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/sdxl-image.avif"
-                  alt="Creative asset 1"
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-white/10 shadow-2xl -rotate-[4deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-white/[0.01] -ml-3 sm:-ml-4 flex-shrink-0">
+              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] shadow-2xl -rotate-[4deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-[color:var(--ogi-elevated,rgba(255,255,255,0.02))] -ml-3 sm:-ml-4 flex-shrink-0">
                 <img
                   src="https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/chroma-image.avif"
-                  alt="Creative asset 2"
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full border border-white/10 shadow-2xl rotate-[6deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-white/[0.01] -ml-3 sm:-ml-4 flex-shrink-0">
+              <div className="w-18 h-18 sm:w-24 sm:h-24 rounded-full border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] shadow-2xl rotate-[6deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-[color:var(--ogi-elevated,rgba(255,255,255,0.02))] -ml-3 sm:-ml-4 flex-shrink-0">
                 <img
                   src="https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/neta-lumina.avif"
-                  alt="Creative asset 3"
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-white/10 shadow-2xl rotate-[12deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-white/[0.01] -ml-3 sm:-ml-4 flex-shrink-0">
+              <div className="w-18 h-22 sm:w-24 sm:h-28 rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] shadow-2xl rotate-[12deg] transform hover:rotate-0 hover:scale-110 hover:z-20 transition-all duration-300 overflow-hidden bg-[color:var(--ogi-elevated,rgba(255,255,255,0.02))] -ml-3 sm:-ml-4 flex-shrink-0">
                 <img
                   src="https://d3adwkbyhxyrtq.cloudfront.net/webassets/videomodels/perfect-pony-xl.avif"
-                  alt="Creative asset 4"
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               </div>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-center px-4 flex flex-col items-center">
-              <span className="text-white font-black uppercase text-xl sm:text-3xl tracking-wide mb-1 opacity-90">{copy.empty.kicker}</span>
-              <span className="text-[#22d3ee] font-black uppercase text-2xl sm:text-4xl sm:mt-1 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-3 sm:mb-4 text-center px-4 flex flex-col items-center">
+              <span className="text-[color:var(--ogi-fg,#fff)] font-black uppercase text-lg sm:text-3xl tracking-[0.08em] mb-1 opacity-90">{copy.empty.kicker}</span>
+              <span className="text-[color:var(--ogi-accent,#22d3ee)] font-black uppercase text-2xl sm:text-4xl sm:mt-1 tracking-tight">
                 {copy.empty.title}
               </span>
             </h1>
-            <p className="text-white/40 text-xs sm:text-sm font-medium tracking-wide text-center max-w-lg leading-relaxed px-4">
+            <p className="text-[color:var(--ogi-muted,rgba(255,255,255,0.55))] text-sm sm:text-base font-medium tracking-wide text-center max-w-md leading-relaxed px-4">
               {copy.empty.description}
             </p>
           </div>
@@ -1091,7 +1104,7 @@ export default function CinemaStudio({
 
       {/* ── BOTTOM PROMPT BAR ── */}
       <PromptComposer
-        positionClassName="absolute bottom-4 left-4 right-4 md:left-0 md:right-0 md:mx-auto md:max-w-[95%] lg:max-w-4xl z-30 transition-all duration-700 animate-fade-in-up"
+        positionClassName="absolute bottom-3 left-3 right-3 sm:bottom-4 sm:left-4 sm:right-4 md:left-0 md:right-0 md:mx-auto md:max-w-[95%] lg:max-w-4xl z-30 transition-all duration-700 animate-fade-in-up"
         style={null}
       >
           {/* Upper Row: Image Upload & Textarea */}
@@ -1121,7 +1134,7 @@ export default function CinemaStudio({
                 disabled={isUploadingImage}
                 className={promptMediaButtonClassName({
                   active: Boolean(uploadedImage) || isImageDragging,
-                }) + (isImageDragging ? " ring-2 ring-[#22d3ee] ring-offset-1 ring-offset-black scale-105" : "")}
+                }) + (isImageDragging ? " ring-2 ring-[color:var(--ogi-accent,#22d3ee)] ring-offset-1 ring-offset-[color:var(--ogi-canvas,#000)] scale-105" : "")}
               >
                 {isUploadingImage ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -1165,7 +1178,7 @@ export default function CinemaStudio({
                     </div>
                   </div>
                 ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-white/40 group-hover:text-[#22d3ee] transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[color:var(--ogi-muted,rgba(255,255,255,0.4))] group-hover:text-[color:var(--ogi-accent,#22d3ee)] transition-colors">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
@@ -1188,7 +1201,7 @@ export default function CinemaStudio({
           <PromptFooter>
             <PromptControls>
               {/* Aspect Ratio Button */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   ref={arBtnRef}
                   className={promptControlClassName({
@@ -1217,7 +1230,7 @@ export default function CinemaStudio({
               </div>
 
               {/* Resolution Button */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <button
                   ref={resBtnRef}
                   className={promptControlClassName({
@@ -1243,16 +1256,25 @@ export default function CinemaStudio({
                 )}
               </div>
 
-              {/* Summary Card (triggers overlay) */}
+              {/* Camera summary — short label on narrow screens (Google-style chips). */}
               <button
+                type="button"
+                title={`${settings.camera} · ${formatSummaryValue()}`}
+                aria-label={`Camera settings: ${settings.camera}, ${formatSummaryValue()}`}
                 className={promptControlClassName({
-                  className: "text-left overflow-hidden text-xs font-semibold text-white/70 hover:text-white",
+                  className:
+                    "text-left overflow-hidden text-xs font-semibold text-[color:var(--ogi-muted,rgba(255,255,255,0.7))] hover:text-[color:var(--ogi-fg,#fff)] max-w-[min(46vw,11.5rem)] sm:max-w-[14rem]",
                 })}
                 onClick={() => setIsOverlayOpen(true)}
               >
-                <div className="w-1.5 h-1.5 bg-[#22d3ee] rounded-full shadow-lg shadow-[#22d3ee]/20 shrink-0" />
-                <span className="max-w-[120px] truncate text-xs font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
-                  {settings.camera} · {formatSummaryValue()}
+                <div className="w-1.5 h-1.5 bg-[color:var(--ogi-accent,#22d3ee)] rounded-full shadow-[0_0_8px_var(--ogi-accent-soft,rgba(34,211,238,0.35))] shrink-0" />
+                <span className="min-w-0 truncate text-xs font-semibold transition-colors group-hover:text-[color:var(--ogi-accent,#22d3ee)]">
+                  <span className="sm:hidden">{cameraChipLabel}</span>
+                  <span className="hidden sm:inline">{settings.camera}</span>
+                  <span className="text-[color:var(--ogi-faint,rgba(255,255,255,0.35))]">
+                    {" "}
+                    · {settings.focal}mm
+                  </span>
                 </span>
               </button>
             </PromptControls>
@@ -1264,7 +1286,7 @@ export default function CinemaStudio({
             >
               {isGenerating ? (
                 <>
-                  <span className="animate-spin inline-block text-black">◌</span>
+                  <span className="animate-spin inline-block text-[color:var(--ogi-accent-fg,#04121a)]">◌</span>
                   <span>{copy.prompt.generating}</span>
                 </>
               ) : (
