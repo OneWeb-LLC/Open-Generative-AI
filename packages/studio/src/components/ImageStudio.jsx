@@ -57,6 +57,9 @@ import {
   promptControlClassName,
   promptMediaButtonClassName,
 } from "./prompt/PromptComposer.jsx";
+import MobileFlowPrompt from "./prompt/MobileFlowPrompt.jsx";
+import useCompactStudioLayout from "./prompt/useCompactStudioLayout.js";
+import { useRouter } from "next/navigation";
 import en from "../messages/en/imageStudio.json";
 import zh from "../messages/zh/imageStudio.json";
 import { resolveCopy } from "../i18nUtils";
@@ -427,6 +430,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [], 
       <button
         ref={triggerRef}
         type="button"
+        data-ogi-upload-trigger=""
         title={triggerTitle}
         onClick={(e) => {
           e.stopPropagation();
@@ -980,6 +984,8 @@ export default function ImageStudio({
   locale = "en",
 }) {
   const copy = resolveCopy(en, zh, locale);
+  const router = useRouter();
+  const isCompactLayout = useCompactStudioLayout();
   const LEGACY_PERSIST_KEY = "hg_image_studio_persistent";
   const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey, storageScope);
   useEffect(() => {
@@ -1011,6 +1017,7 @@ export default function ImageStudio({
 
   // ── UI state ────────────────────────────────────────────────────────────
   const [dropdownOpen, setDropdownOpen] = useState(null); // 'model' | 'ar' | 'quality' | null
+  const [flowOptionsOpen, setFlowOptionsOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
@@ -1616,6 +1623,106 @@ export default function ImageStudio({
       </div>
 
       {/* ── BOTTOM PROMPT BAR ── */}
+      {isCompactLayout ? (
+        <MobileFlowPrompt
+          mediaType="image"
+          onMediaTypeChange={(type) => {
+            if (type === "video") router.push("/studio/video");
+          }}
+          prompt={prompt}
+          onPromptChange={(event) => setPrompt(event.target.value)}
+          placeholder="What do you want to make?"
+          aspectRatio={selectedAr}
+          aspectRatios={currentAspectRatios}
+          onAspectRatioChange={setSelectedAr}
+          quantity={batchSize}
+          onQuantityChange={setBatchSize}
+          modelLabel={selectedModelDisplayName}
+          modelMenuOpen={dropdownOpen === "model"}
+          onModelToggle={() =>
+            setDropdownOpen((open) => (open === "model" ? null : "model"))
+          }
+          modelMenu={
+            <>
+              <PromptPopoverHeader>{copy.popovers.model}</PromptPopoverHeader>
+              <ModelDropdown
+                selectedModel={selectedModelId}
+                onSelect={handleModelSelect}
+                onClose={() => setDropdownOpen(null)}
+                copy={copy}
+              />
+            </>
+          }
+          creditText={`${batchSize} AI credit${batchSize === 1 ? "" : "s"}`}
+          attachControl={
+            referenceVariant && uploadedImageUrls.length < referenceImageLimit ? (
+              <UploadButton
+                apiKey={apiKey}
+                maxImages={referenceImageLimit}
+                onSelect={handleUploadSelect}
+                onClear={handleUploadClear}
+                initialUrls={uploadedImageUrls}
+                persistedHistory={uploadHistory}
+                onHistoryChange={setUploadHistory}
+                copy={copy}
+              />
+            ) : (
+              <button
+                type="button"
+                disabled
+                aria-label="Add reference"
+                className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-white/30 bg-white/[0.04] opacity-40"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            )
+          }
+          onGenerate={handleGenerate}
+          generating={generating}
+          generateDisabled={generating}
+          optionsOpen={flowOptionsOpen}
+          onOptionsOpenChange={(open) => {
+            setFlowOptionsOpen(open);
+            if (!open) setDropdownOpen(null);
+          }}
+          mediaSlot={
+            (uploadedImageUrls.length > 0 ||
+              (imageMode && getI2IModelById(selectedModelId)?.swapField)) && (
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {uploadedImageUrls.map((url, idx) => (
+                  <div key={url} className={PROMPT_MEDIA_PREVIEW_CLASS}>
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = uploadedImageUrls.filter((_, i) => i !== idx);
+                        setUploadedImageUrls(next);
+                        if (next.length === 0) handleUploadClear();
+                      }}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-black rounded-full flex items-center justify-center text-white/85 hover:text-white text-[8px] border border-white/5"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                {imageMode && getI2IModelById(selectedModelId)?.swapField && (
+                  <UploadButton
+                    apiKey={apiKey}
+                    maxImages={1}
+                    onSelect={({ urls }) => setSwapImageUrl(urls[0] || null)}
+                    onClear={() => setSwapImageUrl(null)}
+                    initialUrls={swapImageUrl ? [swapImageUrl] : []}
+                    label={copy.promptBar.swapFaceLabel}
+                    copy={copy}
+                  />
+                )}
+              </div>
+            )
+          }
+        />
+      ) : (
       <PromptComposer>
           {/* Top row: upload picker + textarea */}
           <div className="flex flex-col gap-3">
@@ -1903,6 +2010,7 @@ export default function ImageStudio({
             </PromptAction>
           </PromptFooter>
       </PromptComposer>
+      )}
 
       {/* ── FULLSCREEN IMAGE MODAL ── */}
       {fullscreenUrl && (

@@ -115,7 +115,10 @@ import {
   promptControlClassName,
   promptMediaButtonClassName,
 } from "./prompt/PromptComposer.jsx";
+import MobileFlowPrompt from "./prompt/MobileFlowPrompt.jsx";
+import useCompactStudioLayout from "./prompt/useCompactStudioLayout.js";
 import usePromptMenu from "./prompt/usePromptMenu.js";
+import { useRouter } from "next/navigation";
 import en from "../messages/en/videoStudio.json";
 import zh from "../messages/zh/videoStudio.json";
 import { resolveCopy } from "../i18nUtils";
@@ -870,6 +873,8 @@ export default function VideoStudio({
   locale = "en",
 }) {
   const copy = useMemo(() => resolveCopy(en, zh, locale), [locale]);
+  const router = useRouter();
+  const isCompactLayout = useCompactStudioLayout();
   const LEGACY_PERSIST_KEY = "hg_video_studio_persistent";
   const PERSIST_KEY = scopedPersistKey(LEGACY_PERSIST_KEY, apiKey, storageScope);
   useEffect(() => {
@@ -979,6 +984,8 @@ export default function VideoStudio({
 
   // ── dropdown ──
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [flowOptionsOpen, setFlowOptionsOpen] = useState(true);
+  const [videoBatchSize, setVideoBatchSize] = useState(1);
 
   // ── prompt ──
   const [prompt, setPrompt] = useState("");
@@ -2971,6 +2978,122 @@ export default function VideoStudio({
       </div>
 
       {/* ── BOTTOM PROMPT BAR ── */}
+      {isCompactLayout ? (
+        <MobileFlowPrompt
+          mediaType="video"
+          onMediaTypeChange={(type) => {
+            if (type === "image") router.push("/studio/image");
+          }}
+          prompt={prompt}
+          onPromptChange={handlePromptInput}
+          placeholder="What do you want to make?"
+          aspectRatio={selectedAr}
+          aspectRatios={
+            showAr
+              ? groupedConfiguration
+                ? commonOptions.aspectRatios
+                : getCurrentAspectRatios(selectedModel)
+              : []
+          }
+          onAspectRatioChange={setSelectedAr}
+          quantity={videoBatchSize}
+          onQuantityChange={setVideoBatchSize}
+          showQuantity
+          duration={selectedDuration}
+          durations={
+            groupedConfiguration
+              ? commonOptions.durations
+              : showDuration
+                ? getCurrentDurations(selectedModel)
+                : []
+          }
+          onDurationChange={setSelectedDuration}
+          modelLabel={selectedPickerLabel}
+          modelMenuOpen={openDropdown === "model"}
+          onModelToggle={() =>
+            setOpenDropdown((open) => (open === "model" ? null : "model"))
+          }
+          modelMenu={
+            <>
+              <PromptPopoverHeader>{copy.dropdowns.model}</PromptPopoverHeader>
+              <ModelDropdown
+                selectedModel={selectedModel}
+                onSelect={handleModelSelect}
+                onClose={() => setOpenDropdown(null)}
+                copy={copy}
+                apiProviderId={apiProviderId}
+                gatewayPricingByGatewayModelId={gatewayPricingByGatewayModelId}
+                dynamicGatewayPickerEntries={dynamicGatewayPickerEntries}
+                estimateDurationSeconds={selectedDuration}
+              />
+            </>
+          }
+          creditText={
+            liveCostEstimate.status === "ready" && liveCostEstimate.label
+              ? liveCostEstimate.label
+              : liveCostEstimate.status === "loading"
+                ? "…"
+                : "AI credits"
+          }
+          attachControl={
+            canUploadImageReference && uploadedImageUrls.length < imageUploadLimit ? (
+              <ReferenceUploadButton
+                copy={copy}
+                inputRef={imageFileInputRef}
+                accept="image/*"
+                multiple={imageUploadLimit - uploadedImageUrls.length > 1}
+                onChange={handleImageFileChange}
+                onClick={() => imageFileInputRef.current?.click()}
+                title={copy.upload.uploadUpToReferenceImages.replace(
+                  "{count}",
+                  imageUploadLimit,
+                )}
+                uploading={imageUploading}
+                progress={imageProgress}
+                type="image"
+              />
+            ) : videoUploadLimit > 0 && uploadedVideoUrls.length < videoUploadLimit ? (
+              <ReferenceUploadButton
+                copy={copy}
+                inputRef={videoFileInputRef}
+                accept="video/*"
+                multiple={videoUploadLimit - uploadedVideoUrls.length > 1}
+                onChange={handleVideoFileChange}
+                onClick={() => videoFileInputRef.current?.click()}
+                title={`Upload up to ${videoUploadLimit} reference videos`}
+                uploading={videoUploading}
+                progress={videoProgress}
+                type="video"
+              />
+            ) : (
+              <button
+                type="button"
+                disabled
+                aria-label="Add reference"
+                className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-white/30 bg-white/[0.04] opacity-40"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+            )
+          }
+          onGenerate={handleGenerate}
+          generating={generating}
+          generateDisabled={
+            generating ||
+            mediaUploading ||
+            (selectedTool?.group === "continueGenerated" && !hasContinuationSource) ||
+            (selectedVeoTool && !selectedVeoSource)
+          }
+          optionsOpen={flowOptionsOpen}
+          onOptionsOpenChange={(open) => {
+            setFlowOptionsOpen(open);
+            if (!open) setOpenDropdown(null);
+          }}
+        />
+      ) : null}
+      {!isCompactLayout ? (
       <PromptComposer>
           <div className="flex flex-col gap-2">
             {/* Inline list of uploaded media files */}
@@ -3725,6 +3848,7 @@ export default function VideoStudio({
             </div>
           </PromptFooter>
       </PromptComposer>
+      ) : null}
 
       {/* ── FULLSCREEN VIDEO MODAL ── */}
       {fullscreenUrl && (
