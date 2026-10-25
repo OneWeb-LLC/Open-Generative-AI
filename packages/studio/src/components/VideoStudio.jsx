@@ -2029,20 +2029,20 @@ export default function VideoStudio({
   useEffect(() => {
     if (!openDropdown) return;
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpenDropdown(null);
+      const target = e.target;
+      if (!(target instanceof Node)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      if (target instanceof Element && target.closest("[data-ogi-prompt-popover]")) {
+        return;
       }
+      setOpenDropdown(null);
     };
-    let attached = false;
-    const frame = window.requestAnimationFrame(() => {
-      window.addEventListener("click", handler, true);
-      attached = true;
-    });
+    const timeout = window.setTimeout(() => {
+      document.addEventListener("click", handler);
+    }, 0);
     return () => {
-      window.cancelAnimationFrame(frame);
-      if (attached) {
-        window.removeEventListener("click", handler, true);
-      }
+      window.clearTimeout(timeout);
+      document.removeEventListener("click", handler);
     };
   }, [openDropdown]);
 
@@ -2750,9 +2750,9 @@ export default function VideoStudio({
       className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-hidden"
     >
       {/* ── CENTRAL GALLERY AREA ── */}
-      <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
+      <div className="pointer-events-none flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
         {history.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
+          <div className="pointer-events-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {history.map((entry, idx) => {
               const isSeedance2 = isContinuationSourceModel("seedance-2-extend", entry.model);
               return (
