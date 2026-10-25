@@ -63,4 +63,46 @@ describe("MobileFlowPrompt", () => {
     expect(screen.queryByText(/Generating will use/i)).toBeNull();
     expect(document.querySelector("[data-ogi-mobile-flow-sheet]")).toBeNull();
   });
+
+  it("opens settings without stacking on the keyboard (closes on focus)", () => {
+    const onOptionsOpenChange = vi.fn();
+
+    const { rerender } = render(
+      <MobileFlowPrompt
+        mediaType="image"
+        prompt=""
+        onPromptChange={() => {}}
+        aspectRatio="1:1"
+        aspectRatios={["1:1"]}
+        quantity={1}
+        modelLabel="Test Model"
+        optionsOpen={false}
+        onOptionsOpenChange={onOptionsOpenChange}
+        onGenerate={() => {}}
+      />,
+    );
+
+    const settings = screen.getByRole("button", { expanded: false });
+    fireEvent.mouseDown(settings);
+    fireEvent.click(settings);
+    expect(onOptionsOpenChange).toHaveBeenCalledWith(true);
+
+    rerender(
+      <MobileFlowPrompt
+        mediaType="image"
+        prompt=""
+        onPromptChange={() => {}}
+        aspectRatio="1:1"
+        aspectRatios={["1:1"]}
+        quantity={1}
+        modelLabel="Test Model"
+        optionsOpen
+        onOptionsOpenChange={onOptionsOpenChange}
+        onGenerate={() => {}}
+      />,
+    );
+
+    fireEvent.focus(screen.getByPlaceholderText("What do you want to make?"));
+    expect(onOptionsOpenChange).toHaveBeenCalledWith(false);
+  });
 });

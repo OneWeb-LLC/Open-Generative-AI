@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useId, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
 import { PromptChevronIcon, PromptPopover, PromptTextarea } from "./PromptComposer.jsx";
 
 function joinClasses(...classes) {
@@ -142,7 +142,11 @@ export function FlowSegmentRow({ children, className = "" }) {
 }
 
 /**
- * Google Flow–style mobile prompt: floating prompt card + expandable options sheet.
+ * Google Flow / Gemini-style mobile prompt.
+ *
+ * Mutually exclusive surfaces:
+ * - Typing → soft keyboard owns the lower viewport; options stay closed.
+ * - Settings → dismiss keyboard and expand the options sheet into that space.
  */
 export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
   {
@@ -184,17 +188,72 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
   const optionsId = useId();
   const sheetRef = useRef(null);
   const textareaRef = useRef(null);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+
+  const blurPrompt = useCallback(() => {
+    const active = document.activeElement;
+    if (active && typeof active.blur === "function") active.blur();
+    textareaRef.current?.blur();
+  }, []);
+
+  const openOptions = useCallback(() => {
+    blurPrompt();
+    onOptionsOpenChange?.(true);
+  }, [blurPrompt, onOptionsOpenChange]);
+
+  const closeOptions = useCallback(() => {
+    onOptionsOpenChange?.(false);
+  }, [onOptionsOpenChange]);
+
+  const toggleOptions = useCallback(() => {
+    if (optionsOpen) {
+      closeOptions();
+      return;
+    }
+    openOptions();
+  }, [closeOptions, openOptions, optionsOpen]);
+
+  // Soft keyboard inset only while typing (options closed). Settings replace the keyboard.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return undefined;
+
+    const viewport = window.visualViewport;
+    const syncInset = () => {
+      if (optionsOpen) {
+        setKeyboardInset(0);
+        return;
+      }
+      const inset = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      setKeyboardInset(inset > 40 ? inset : 0);
+    };
+
+    syncInset();
+    viewport.addEventListener("resize", syncInset);
+    viewport.addEventListener("scroll", syncInset);
+    window.addEventListener("focusin", syncInset);
+    window.addEventListener("focusout", syncInset);
+    return () => {
+      viewport.removeEventListener("resize", syncInset);
+      viewport.removeEventListener("scroll", syncInset);
+      window.removeEventListener("focusin", syncInset);
+      window.removeEventListener("focusout", syncInset);
+    };
+  }, [optionsOpen]);
 
   useEffect(() => {
     if (!optionsOpen) return undefined;
+    blurPrompt();
     const onPointerDown = (event) => {
       const root = sheetRef.current;
       if (!root) return;
       if (root.contains(event.target)) return;
-      onOptionsOpenChange?.(false);
+      closeOptions();
     };
     const onKeyDown = (event) => {
-      if (event.key === "Escape") onOptionsOpenChange?.(false);
+      if (event.key === "Escape") closeOptions();
     };
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
@@ -202,7 +261,7 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [optionsOpen, onOptionsOpenChange]);
+  }, [blurPrompt, closeOptions, optionsOpen]);
 
   const summaryParts = [
     mediaType === "video" ? "Video" : "Image",
@@ -221,10 +280,16 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
       }}
       data-ogi-prompt-composer=""
       data-ogi-mobile-flow-prompt=""
+      data-ogi-flow-options={optionsOpen ? "open" : "closed"}
+      data-ogi-flow-keyboard={keyboardInset > 0 ? "open" : "closed"}
       className={joinClasses(
         "absolute bottom-4 left-0 right-0 z-[100] mx-auto w-full max-w-none pointer-events-auto px-0 flex flex-col gap-2",
+        "transition-[bottom] duration-200 ease-out",
         className,
       )}
+      style={{
+        ["--ogi-flow-keyboard-inset"]: `${keyboardInset}px`,
+      }}
     >
       <div
         className={joinClasses(
@@ -242,7 +307,11 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
           placeholder={placeholder}
           maxHeightMobile={120}
           maxHeightDesktop={120}
-          onFocus={() => onOptionsOpenChange?.(true)}
+          enterKeyHint="done"
+          onFocus={() => {
+            // Keyboard owns this mode — collapse settings so they never stack with it.
+            if (optionsOpen) closeOptions();
+          }}
           className={joinClasses(
             "min-h-[52px] text-[22px] leading-snug font-semibold tracking-[-0.02em]",
             "placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.28))] placeholder:font-semibold",
@@ -273,7 +342,10 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
             type="button"
             aria-expanded={optionsOpen}
             aria-controls={optionsId}
-            onClick={() => onOptionsOpenChange?.(!optionsOpen)}
+            // Keep the soft keyboard from fighting the settings sheet (Gemini pattern).
+            onMouseDown={(event) => event.preventDefault()}
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={toggleOptions}
             className={joinClasses(
               "h-10 max-w-[58%] rounded-full px-3.5 inline-flex items-center gap-1.5",
               "bg-[color:var(--ogi-control,rgba(255,255,255,0.08))] text-[color:var(--ogi-fg,#fff)]",
@@ -295,6 +367,7 @@ export const MobileFlowPrompt = forwardRef(function MobileFlowPrompt(
 
           <button
             type="button"
+            onMouseDown={(event) => event.preventDefault()}
             onClick={onGenerate}
             disabled={generateDisabled || generating}
             aria-label={generating ? "Generating" : "Generate"}

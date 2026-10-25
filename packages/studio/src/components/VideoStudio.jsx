@@ -984,7 +984,7 @@ export default function VideoStudio({
 
   // ── dropdown ──
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [flowOptionsOpen, setFlowOptionsOpen] = useState(true);
+  const [flowOptionsOpen, setFlowOptionsOpen] = useState(false);
   const [videoBatchSize, setVideoBatchSize] = useState(1);
 
   // ── prompt ──

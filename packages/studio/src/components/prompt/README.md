@@ -9,10 +9,14 @@ individual Studio component.
 
 - `PromptComposer` provides the floating panel position, background, border,
   radius, padding, shadow, and animation.
-- `MobileFlowPrompt` is the compact-shell (≤1023px) Google Flow–style composer:
-  large prompt card, summary pill, and expandable options sheet (media type,
-  aspect ratio, quantity, duration, model). Use `useCompactStudioLayout()` to
-  switch between it and the desktop `PromptComposer`.
+- `MobileFlowPrompt` is the compact-shell (≤1023px) Google Flow / Gemini-style
+  composer: minimized prompt card, summary pill, and expandable options sheet
+  (media type, aspect ratio, quantity, duration, model). Typing and settings
+  are mutually exclusive — focusing the textarea closes options (keyboard
+  owns the lower viewport); opening settings blurs the field so the sheet
+  replaces the keyboard instead of stacking with it. Use
+  `useCompactStudioLayout()` to switch between it and the desktop
+  `PromptComposer`.
 - `PromptTextarea` provides the shared typography, placeholder treatment,
   scrolling, and responsive auto-resize behavior.
 - `PromptFooter` provides the responsive divider and action-row layout.
