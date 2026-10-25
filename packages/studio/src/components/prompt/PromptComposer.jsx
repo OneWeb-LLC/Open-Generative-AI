@@ -16,7 +16,7 @@ const DEFAULT_POSITION_CLASS =
    Dark (Google-neutral), and Cosmic themes stay coherent. Fallbacks keep the
    standalone MuAPI look. */
 const DEFAULT_PANEL_CLASS =
-  "w-full bg-[color:var(--ogi-panel,rgba(15,15,18,0.92))] backdrop-blur-2xl rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] p-2.5 sm:p-3 flex flex-col gap-2 shadow-[var(--ogi-shadow,0_12px_40px_rgba(0,0,0,0.45))]";
+  "w-full overflow-visible bg-[color:var(--ogi-panel,rgba(15,15,18,0.92))] backdrop-blur-2xl rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] p-2.5 sm:p-3 flex flex-col gap-2 shadow-[var(--ogi-shadow,0_12px_40px_rgba(0,0,0,0.45))]";
 
 const DEFAULT_TEXTAREA_CLASS =
   "w-full bg-transparent border-none text-[color:var(--ogi-fg,#fff)] text-sm placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.28))] focus:outline-none resize-none pt-0.5 leading-relaxed min-h-[32px] max-h-[150px] md:max-h-[220px] overflow-y-auto custom-scrollbar disabled:opacity-40";
@@ -37,7 +37,7 @@ const MEDIA_CONTROL_LAYOUT_CLASS =
   "w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden group focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
 
 const DEFAULT_POPOVER_POSITION_CLASS =
-  "absolute bottom-[calc(100%+12px)] left-0 z-50";
+  "absolute bottom-[calc(100%+12px)] left-0 z-[80]";
 
 const DEFAULT_POPOVER_CLASS =
   "rounded-xl p-3.5 shadow-[var(--ogi-shadow,0_10px_40px_rgba(0,0,0,0.8))] border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] bg-[color:var(--ogi-panel-solid,#0c0c0f)] backdrop-blur-2xl min-w-[160px] max-h-[40vh] overflow-y-auto custom-scrollbar";
@@ -422,7 +422,7 @@ export function PromptFooter({ children, className = "" }) {
   return (
     <div
       className={joinClasses(
-        "flex flex-row items-center gap-2 pt-2 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.04))] relative min-w-0",
+        "flex flex-row items-center gap-2 pt-2 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.04))] relative z-[2] min-w-0 overflow-visible",
         className,
       )}
     >
@@ -440,7 +440,7 @@ export const PromptControls = forwardRef(function PromptControls(
       ref={ref}
       data-ogi-prompt-controls=""
       className={joinClasses(
-        "flex items-center gap-1.5 relative flex-1 min-w-0 flex-nowrap overflow-x-auto no-scrollbar",
+        "flex items-center gap-1.5 relative flex-1 min-w-0 flex-nowrap overflow-visible",
         className,
       )}
     >

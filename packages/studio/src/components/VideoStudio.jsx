@@ -2033,8 +2033,17 @@ export default function VideoStudio({
         setOpenDropdown(null);
       }
     };
-    window.addEventListener("click", handler);
-    return () => window.removeEventListener("click", handler);
+    let attached = false;
+    const frame = window.requestAnimationFrame(() => {
+      window.addEventListener("click", handler, true);
+      attached = true;
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (attached) {
+        window.removeEventListener("click", handler, true);
+      }
+    };
   }, [openDropdown]);
 
   const handlePromptInput = (e) => {
@@ -3210,7 +3219,12 @@ export default function VideoStudio({
 
           {/* Bottom row: controls + generate */}
           <PromptFooter>
-            <PromptControls ref={dropdownRef}>
+            <div
+              ref={dropdownRef}
+              data-ogi-prompt-footer-scroll=""
+              className="flex min-w-0 flex-1 items-center gap-2 overflow-visible"
+            >
+            <PromptControls>
               {/* Model btn */}
               <div className="relative">
                 <button
@@ -3690,6 +3704,7 @@ export default function VideoStudio({
                   </>
                 )}
               </PromptAction>
+            </div>
           </PromptFooter>
       </PromptComposer>
 
