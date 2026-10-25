@@ -155,7 +155,8 @@ async function generateViaComfyRunpod(apiKey, params, { imageMode = false } = {}
     }
 
     const data = await response.json();
-    const playableUrl = await blobUrlFromDataUrl(data.url);
+    // Keep the server-returned URL (often Vercel Blob) in history — blob: object URLs die on refresh.
+    const playableUrl = data.url;
     return {
         url: playableUrl,
         request_id: data.metadata?.requestId || `comfy-${Date.now()}`,
