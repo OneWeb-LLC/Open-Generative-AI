@@ -7,12 +7,10 @@ import {
   useImperativeHandle,
   useLayoutEffect,
   useRef,
-  useState,
 } from "react";
-import { createPortal } from "react-dom";
 
 const DEFAULT_POSITION_CLASS =
-  "absolute bottom-4 left-1/2 w-full max-w-[95%] lg:max-w-4xl z-[100] -translate-x-1/2 animate-fade-in-up pointer-events-auto";
+  "absolute bottom-4 left-0 right-0 z-[100] mx-auto w-[min(100%,calc(100%-2rem))] max-w-4xl animate-fade-in-up pointer-events-auto px-0";
 
 /* Surfaces/accents read --ogi-* from the OWeb host when embedded so Light,
    Dark (Google-neutral), and Cosmic themes stay coherent. Fallbacks keep the
@@ -170,103 +168,70 @@ export const PromptPopover = forwardRef(function PromptPopover(
   {
     children,
     className = "",
-    positionClassName: _positionClassName = DEFAULT_POPOVER_POSITION_CLASS,
+    positionClassName = DEFAULT_POPOVER_POSITION_CLASS,
     fitViewport = false,
     solid = false,
     ...props
   },
   ref,
 ) {
-  const anchorSlotRef = useRef(null);
   const popoverRef = useRef(null);
   useImperativeHandle(ref, () => popoverRef.current);
-  const [coords, setCoords] = useState(null);
-
   useLayoutEffect(() => {
-    const anchor = anchorSlotRef.current?.parentElement;
-    if (!anchor) return;
-
+    if (!fitViewport) return;
     const position = () => {
-      const rect = anchor.getBoundingClientRect();
-      let left = rect.left;
-      let maxHeight = Math.min(window.innerHeight * 0.45, 400);
-
-      if (fitViewport) {
-        const margin = 16;
-        const popoverWidth = popoverRef.current?.offsetWidth || 280;
-        left = Math.max(
-          margin,
-          Math.min(left, window.innerWidth - margin - popoverWidth),
-        );
-        maxHeight = Math.min(maxHeight, Math.max(120, rect.top - margin));
+      const popover = popoverRef.current;
+      if (!popover) return;
+      popover.style.translate = "";
+      popover.style.height = "";
+      let left = 16;
+      let right = window.innerWidth - 16;
+      let top = 16;
+      for (let parent = popover.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent);
+        const clipsX = /auto|scroll|hidden|clip/.test(style.overflowX);
+        const clipsY = /auto|scroll|hidden|clip/.test(style.overflowY);
+        if (!clipsX && !clipsY) continue;
+        const bounds = parent.getBoundingClientRect();
+        if (clipsX) {
+          left = Math.max(left, bounds.left + 16);
+          right = Math.min(right, bounds.right - 16);
+        }
+        if (clipsY) top = Math.max(top, bounds.top + 16);
       }
-
-      setCoords({
-        left,
-        bottom: window.innerHeight - rect.top + 12,
-        maxHeight,
-      });
+      const bounds = popover.getBoundingClientRect();
+      const shift = Math.max(left - bounds.left, Math.min(0, right - bounds.right));
+      popover.style.translate = `${shift}px 0`;
+      if (bounds.top < top) {
+        popover.style.height = `${Math.max(0, bounds.bottom - top)}px`;
+      }
     };
-
     position();
-    const frame = window.requestAnimationFrame(position);
+    const popover = popoverRef.current;
+    if (!popover) return;
+    popover.addEventListener("toggle", position, true);
     window.addEventListener("resize", position);
-    window.addEventListener("scroll", position, true);
     return () => {
-      window.cancelAnimationFrame(frame);
+      popover.removeEventListener("toggle", position, true);
       window.removeEventListener("resize", position);
-      window.removeEventListener("scroll", position, true);
     };
   }, [fitViewport, children]);
-
-  useLayoutEffect(() => {
-    if (!fitViewport || !coords || !popoverRef.current) return;
-    const popover = popoverRef.current;
-    popover.style.translate = "";
-    const margin = 16;
-    const bounds = popover.getBoundingClientRect();
-    const shift = Math.max(
-      margin - bounds.left,
-      Math.min(0, window.innerWidth - margin - bounds.right),
-    );
-    popover.style.translate = `${shift}px 0`;
-  }, [fitViewport, coords, children]);
-
-  const panel =
-    coords && (
-      <div
-        {...props}
-        ref={popoverRef}
-        data-ogi-prompt-popover=""
-        className={joinClasses(
-          "fixed z-[200]",
-          DEFAULT_POPOVER_CLASS,
-          solid
-            ? "bg-[color:var(--ogi-panel-solid,#0c0c0f)]"
-            : "bg-[color:var(--ogi-panel,rgba(12,12,15,0.95))]",
-          className,
-        )}
-        style={{
-          left: coords.left,
-          bottom: coords.bottom,
-          maxHeight: coords.maxHeight,
-        }}
-      >
-        {children}
-      </div>
-    );
-
   return (
-    <>
-      <div
-        ref={anchorSlotRef}
-        className="pointer-events-none absolute inset-0"
-        aria-hidden="true"
-      />
-      {typeof document !== "undefined" && panel
-        ? createPortal(panel, document.body)
-        : panel}
-    </>
+    <div
+      {...props}
+      ref={popoverRef}
+      data-ogi-prompt-popover=""
+      className={joinClasses(
+        positionClassName,
+        DEFAULT_POPOVER_CLASS,
+        solid
+          ? "bg-[color:var(--ogi-panel-solid,#0c0c0f)]"
+          : "bg-[color:var(--ogi-panel,rgba(12,12,15,0.95))]",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 });
 
@@ -480,7 +445,7 @@ export const PromptControls = forwardRef(function PromptControls(
       ref={ref}
       data-ogi-prompt-controls=""
       className={joinClasses(
-        "flex items-center gap-1.5 relative flex-1 min-w-0 flex-nowrap overflow-visible",
+        "flex items-center gap-1.5 relative flex-1 min-w-0 flex-wrap md:flex-nowrap overflow-visible",
         className,
       )}
     >

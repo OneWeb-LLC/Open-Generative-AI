@@ -2030,19 +2030,17 @@ export default function VideoStudio({
     if (!openDropdown) return;
     const handler = (e) => {
       const target = e.target;
-      if (!(target instanceof Node)) return;
-      if (dropdownRef.current?.contains(target)) return;
-      if (target instanceof Element && target.closest("[data-ogi-prompt-popover]")) {
+      if (target instanceof Node && dropdownRef.current?.contains(target)) {
         return;
       }
       setOpenDropdown(null);
     };
     const timeout = window.setTimeout(() => {
-      document.addEventListener("click", handler);
+      document.addEventListener("mousedown", handler);
     }, 0);
     return () => {
       window.clearTimeout(timeout);
-      document.removeEventListener("click", handler);
+      document.removeEventListener("mousedown", handler);
     };
   }, [openDropdown]);
 
@@ -2747,7 +2745,7 @@ export default function VideoStudio({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-hidden"
+      className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-x-hidden overflow-y-hidden"
     >
       {/* ── CENTRAL GALLERY AREA ── */}
       <div className="pointer-events-none flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
