@@ -44,9 +44,8 @@ import {
   isVideoModelVisibleForApiProvider,
 } from "../videoGenerativeProviders.js";
 import {
-  formatVideoPickerLabelWithPrice,
   pickerEntryGatewaySlug,
-  resolveStudioModelGatewaySlug,
+  resolveVideoPickerUsdPriceLabel,
 } from "../utils/gatewayVideoPickerLabels.js";
 import { buildGatewayApiPickerEntry } from "../vercelGatewayVideoModels.js";
 import { getSeedanceEndpointResolution, getSeedanceToolConfiguration } from "../seedanceModels.js";
@@ -462,6 +461,13 @@ function seedanceToolLabel(tool, copy, includeAction = false) {
   ].filter(Boolean).join(" · ");
 }
 
+const OGI_PICKER_FG = "text-[color:var(--ogi-fg,var(--foreground))]";
+const OGI_PICKER_MUTED = "text-[color:var(--ogi-muted,var(--muted-foreground))]";
+const OGI_PICKER_FAINT = "text-[color:var(--ogi-faint,color-mix(in_oklab,var(--muted-foreground)_72%,transparent))]";
+const OGI_PICKER_BORDER = "border-[color:var(--ogi-border,color-mix(in_oklab,var(--border)_85%,transparent))]";
+const OGI_PICKER_HOVER = "hover:bg-[color-mix(in_oklab,var(--ogi-fg,var(--foreground))_6%,transparent)]";
+const OGI_PICKER_SURFACE = "bg-[color-mix(in_oklab,var(--ogi-fg,var(--foreground))_4%,transparent)]";
+
 function ModelDropdown({
   selectedModel,
   onSelect,
@@ -470,6 +476,7 @@ function ModelDropdown({
   apiProviderId = "muapi-proxy",
   gatewayPricingByGatewayModelId = {},
   dynamicGatewayPickerEntries = [],
+  estimateDurationSeconds = 5,
 }) {
   const [search, setSearch] = useState("");
   const selectedEntry = videoModelPickerEntryByVariantId.get(selectedModel);
@@ -616,23 +623,32 @@ function ModelDropdown({
     return "bg-primary/10 text-primary border-primary/10";
   };
 
-  const labelForEntry = (entry) => {
-    const base = entry.name;
-    if (apiProviderId !== "vercel-ai-gateway") return base;
+  const labelForEntry = (entry) => entry.name;
+
+  const priceForEntry = (entry) => {
+    if (apiProviderId !== "vercel-ai-gateway") return null;
+    const variant =
+      (selectedModel && entry.variantsByMode
+        ? Object.values(entry.variantsByMode).find((v) => v?.model?.id === selectedModel)
+        : null) || entry.defaultVariant;
     const slug = pickerEntryGatewaySlug(entry, selectedModel, gatewayPricingByGatewayModelId);
-    return formatVideoPickerLabelWithPrice(base, slug, gatewayPricingByGatewayModelId);
+    return resolveVideoPickerUsdPriceLabel(slug, gatewayPricingByGatewayModelId, {
+      modelId: variant?.model?.id,
+      durationSeconds: estimateDurationSeconds,
+    });
   };
 
   const renderItem = (entry, label = labelForEntry(entry)) => {
     const { family } = entry;
     const isSelected = selectedEntry === entry;
+    const usdPrice = priceForEntry(entry);
     return (
     <button
       type="button"
       key={entry.id}
       aria-pressed={isSelected}
       ref={isSelected ? activeItemRef : null}
-      className={`flex w-full text-left items-center justify-between p-3.5 hover:bg-white/5 rounded-2xl cursor-pointer transition-all border border-transparent hover:border-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${isSelected ? "bg-white/5 border-white/5" : ""}`}
+      className={`flex w-full text-left items-center justify-between gap-2 p-3.5 rounded-2xl cursor-pointer transition-all border border-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${OGI_PICKER_HOVER} hover:border-[color:var(--ogi-border,color-mix(in_oklab,var(--border)_85%,transparent))] ${isSelected ? `${OGI_PICKER_SURFACE} ${OGI_PICKER_BORDER}` : ""}`}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(entry, activeCategory.id);
@@ -641,7 +657,7 @@ function ModelDropdown({
     >
       <div className="flex items-center gap-3.5">
         {PROVIDER_LOGOS[family.provider] ? (
-          <div className="w-8 h-8 rounded-xl border border-white/5 overflow-hidden shrink-0 flex items-center justify-center bg-white/[0.02]">
+          <div className={`w-8 h-8 rounded-xl border ${OGI_PICKER_BORDER} overflow-hidden shrink-0 flex items-center justify-center ${OGI_PICKER_SURFACE}`}>
             <img
               src={PROVIDER_LOGOS[family.provider]}
               alt={family.provider_name}
@@ -655,35 +671,45 @@ function ModelDropdown({
             {entry.name.charAt(0)}
           </div>
         )}
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="text-xs font-bold text-white tracking-tight truncate">
+        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+          <span className={`text-xs font-bold ${OGI_PICKER_FG} tracking-tight truncate`}>
             {label}
           </span>
           <div className="flex items-center gap-1.5">
             {selectedProvider === "all" && family.provider_name && (
-              <span className="text-[9px] text-white/40">
+              <span className={`text-[9px] ${OGI_PICKER_FAINT}`}>
                 {family.provider_name}
               </span>
             )}
           </div>
         </div>
       </div>
-      {isSelected && <CheckSvg />}
+      <div className="flex items-center gap-2 shrink-0 pl-2">
+        {usdPrice ? (
+          <span
+            className={`text-[10px] font-mono tabular-nums ${OGI_PICKER_MUTED}`}
+            title="Estimated USD (default duration)"
+          >
+            {usdPrice}
+          </span>
+        ) : null}
+        {isSelected ? <CheckSvg /> : null}
+      </div>
     </button>
     );
   };
 
   return (
-    <div className="flex gap-4 h-full max-h-[70vh] min-h-[350px]">
+    <div className="flex gap-4 h-full max-h-[70vh] min-h-[350px]" data-ogi-model-picker="">
       {/* Left Sidebar: Provider tabs */}
-      <div className="flex flex-col gap-2.5 items-center pr-2 border-r border-white/5 shrink-0 select-none overflow-y-auto custom-scrollbar w-14 pt-0.5">
+      <div className={`flex flex-col gap-2.5 items-center pr-2 border-r ${OGI_PICKER_BORDER} shrink-0 select-none overflow-y-auto custom-scrollbar w-14 pt-0.5`}>
         <button
           type="button"
           onClick={() => setSelectedProvider("all")}
           className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all flex-shrink-0 cursor-pointer ${
             selectedProvider === "all"
-              ? "bg-white/10 text-yellow-400 border-yellow-500/30 shadow-md scale-105"
-              : "bg-white/[0.02] text-white/50 border-white/[0.03] hover:bg-white/5 hover:text-white"
+              ? "bg-[color-mix(in_oklab,var(--ogi-fg,var(--foreground))_10%,transparent)] text-yellow-500 border-yellow-500/30 shadow-md scale-105"
+              : `${OGI_PICKER_SURFACE} ${OGI_PICKER_MUTED} ${OGI_PICKER_BORDER} ${OGI_PICKER_HOVER} hover:text-[color:var(--ogi-fg,var(--foreground))]`
           }`}
           title={copy.providers.allProviders}
         >
@@ -704,7 +730,7 @@ function ModelDropdown({
               className={`w-8 h-8 flex-shrink-0 rounded-full flex items-center justify-center overflow-hidden font-black text-[10px] border transition-all cursor-pointer ${
                 isSelected
                   ? `${style.bg} scale-105 shadow-md shadow-black/10`
-                  : "bg-white/[0.02] text-white/40 border-white/[0.02] hover:bg-white/5 hover:text-white/80"
+                  : `${OGI_PICKER_SURFACE} ${OGI_PICKER_FAINT} ${OGI_PICKER_BORDER} ${OGI_PICKER_HOVER}`
               }`}
               title={p.name}
             >
@@ -724,7 +750,7 @@ function ModelDropdown({
 
       {/* Right Pane: Search + Lists */}
       <div className="flex-1 flex flex-col gap-2 min-w-0">
-        <div className="px-1 pb-2 border-b border-white/5 shrink-0 space-y-2">
+        <div className={`px-1 pb-2 border-b ${OGI_PICKER_BORDER} shrink-0 space-y-2`}>
           <div className="flex gap-1.5 overflow-x-auto custom-scrollbar pb-0.5">
             {modelCategories.map((category) => (
               <button
@@ -737,14 +763,14 @@ function ModelDropdown({
                 className={`shrink-0 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-colors border ${
                   selectedCategory === category.id
                     ? "bg-primary/15 text-primary border-primary/30"
-                    : "bg-white/[0.02] text-white/50 border-white/[0.04] hover:bg-white/5 hover:text-white"
+                    : `${OGI_PICKER_SURFACE} ${OGI_PICKER_MUTED} ${OGI_PICKER_BORDER} ${OGI_PICKER_HOVER}`
                 }`}
               >
                 {category.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2 border border-white/5 focus-within:border-primary/50 transition-colors">
+          <div className={`flex items-center gap-3 ${OGI_PICKER_SURFACE} rounded-xl px-4 py-2 border ${OGI_PICKER_BORDER} focus-within:border-primary/50 transition-colors`}>
             <svg
               width="14"
               height="14"
@@ -767,7 +793,7 @@ function ModelDropdown({
                 if (value.trim()) setSelectedProvider("all");
               }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent border-none text-xs text-white focus:ring-0 w-full p-0 outline-none"
+              className={`bg-transparent border-none text-xs ${OGI_PICKER_FG} focus:ring-0 w-full p-0 outline-none placeholder:${OGI_PICKER_FAINT}`}
             />
           </div>
         </div>
@@ -775,7 +801,7 @@ function ModelDropdown({
         <div className="text-xs font-bold text-secondary px-2 py-1 shrink-0 flex items-center justify-between">
           <span>{activeCategory.label} models</span>
           {selectedProvider !== "all" && (
-            <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-white/60">
+            <span className={`text-[10px] ${OGI_PICKER_SURFACE} px-2 py-0.5 rounded ${OGI_PICKER_MUTED}`}>
               {availableProviders.find(p => p.id === selectedProvider)?.name || selectedProvider}
             </span>
           )}
@@ -783,7 +809,7 @@ function ModelDropdown({
         
         <div className="flex flex-col gap-1.5 overflow-y-auto custom-scrollbar pr-1 pb-2 flex-1">
           {filtered.length === 0 ? (
-            <div className="text-xs text-white/30 text-center py-6">
+            <div className={`text-xs ${OGI_PICKER_FAINT} text-center py-6`}>
               No models found
             </div>
           ) : (
@@ -1253,14 +1279,7 @@ export default function VideoStudio({
     freeLabel: copy.gallery.costUnknown,
   });
 
-  const selectedPickerLabel =
-    apiProviderId === "vercel-ai-gateway"
-      ? formatVideoPickerLabelWithPrice(
-          selectedPickerBaseLabel,
-          resolveStudioModelGatewaySlug(selectedVariant?.model),
-          gatewayPricingByGatewayModelId,
-        )
-      : selectedPickerBaseLabel;
+  const selectedPickerLabel = selectedPickerBaseLabel;
 
   const getSelectionPlan = useCallback((options = {}) => planGroupedVideoSelection({
     familyId: selectedFamilyId,
@@ -3267,6 +3286,7 @@ export default function VideoStudio({
                       apiProviderId={apiProviderId}
                       gatewayPricingByGatewayModelId={gatewayPricingByGatewayModelId}
                       dynamicGatewayPickerEntries={dynamicGatewayPickerEntries}
+                      estimateDurationSeconds={selectedDuration}
                     />
                   </PromptPopover>
                 )}
