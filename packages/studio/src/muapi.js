@@ -19,7 +19,7 @@ import {
 export { PLATFORM_MANAGED_MUAPI_KEY, isPlatformManagedMuapiKey } from './muapiAuth.js';
 export { OWEB_HOSTED_CLIENT_KEY, isOwebHostedClientKey } from './muapiAuth.js';
 
-/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, directUpstream?: string }} GenerativeClientConfig */
+/** @typedef {{ mode?: 'proxy' | 'direct' | 'vercel-video' | 'comfy-video' | 'oweb-studio', proxyPath?: string, directUpstream?: string, muapiProxyPath?: string }} GenerativeClientConfig */
 
 /** @type {GenerativeClientConfig} */
 let clientConfig = {
@@ -36,6 +36,15 @@ export function configureGenerativeClient(config) {
     clientConfig = { ...clientConfig, ...config };
 }
 
+/**
+ * Browser base URL for MuAPI-compatible traffic (uploads, workflows, agents, V2V, etc.).
+ * Video T2V/I2V may use Vercel or Comfy routes via `proxyPath` while MuAPI still uses this base.
+ * @returns {string}
+ */
+export function getMuapiClientBaseUrl() {
+    return getBaseUrl();
+}
+
 function getBaseUrl() {
     if (typeof window === 'undefined') {
         return (clientConfig.directUpstream || 'https://api.muapi.ai').replace(/\/$/, '');
@@ -43,9 +52,12 @@ function getBaseUrl() {
     if (clientConfig.mode === 'direct') {
         return (clientConfig.directUpstream || 'https://api.muapi.ai').replace(/\/$/, '');
     }
-    // vercel-video only overrides T2V/I2V; other studios still use the MuAPI proxy.
+    if (clientConfig.muapiProxyPath) {
+        return clientConfig.muapiProxyPath.replace(/\/$/, '');
+    }
+    // vercel-video / comfy-video only override T2V/I2V; other studios still use the MuAPI proxy.
     const proxyPath =
-        clientConfig.mode === 'vercel-video'
+        clientConfig.mode === 'vercel-video' || clientConfig.mode === 'comfy-video'
             ? '/api'
             : clientConfig.mode === 'oweb-studio'
               ? clientConfig.proxyPath || '/api/oweb-studio/generative'
