@@ -2946,7 +2946,7 @@ export default function VideoStudio({
 
       {/* ── BOTTOM PROMPT BAR ── */}
       <PromptComposer>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {/* Inline list of uploaded media files */}
             <div className="flex items-start gap-2.5 flex-wrap">
               {selectedWorkflowId ? (
@@ -3532,15 +3532,6 @@ export default function VideoStudio({
                 </div>
               )}
 
-              {/* Duration btn */}
-              <VideoGenerationCostEstimate
-                variant="chip"
-                status={liveCostEstimate.status}
-                label={liveCostEstimate.label}
-                apiProviderId={apiProviderId}
-                copy={copy}
-              />
-
               {groupedConfiguration && (
                 <VideoOptionControl
                   label={selectedWorkflowId === "extend_uploaded_video" ? groupCopy.extensionDuration : copy.dropdowns.duration}
@@ -3674,18 +3665,10 @@ export default function VideoStudio({
               )}
             </PromptControls>
 
-            <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
-              <VideoGenerationCostEstimate
-                variant="stacked"
-                status={liveCostEstimate.status}
-                label={liveCostEstimate.label}
-                apiProviderId={apiProviderId}
-                copy={copy}
-              />
               <PromptAction
                 onClick={handleGenerate}
                 disabled={generating || mediaUploading || (selectedTool?.group === "continueGenerated" && !hasContinuationSource) || (selectedVeoTool && !selectedVeoSource)}
-                className="flex-col gap-0.5 py-2.5"
+                className="flex-col gap-0 py-1 px-3.5 min-h-[30px]"
               >
                 {generating ? (
                   <>
@@ -3707,7 +3690,6 @@ export default function VideoStudio({
                   </>
                 )}
               </PromptAction>
-            </div>
           </PromptFooter>
       </PromptComposer>
 
