@@ -6,6 +6,7 @@
   "module": "src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./muapi": "./src/muapi.js",
     "./src/models.js": "./src/models.js",
     "./package.json": "./package.json",
     "./dist/tailwind.css": "./dist/tailwind.css",
