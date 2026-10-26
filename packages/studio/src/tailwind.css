@@ -7,3 +7,47 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 }
+
+@layer components {
+  @keyframes ogi-video-job-scan {
+    0%,
+    100% {
+      opacity: 0.65;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes ogi-video-job-shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .ogi-video-job-scanline {
+    animation: ogi-video-job-scan 2.4s ease-in-out infinite;
+  }
+
+  .ogi-video-job-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.04) 0%,
+      rgba(255, 255, 255, 0.14) 50%,
+      rgba(255, 255, 255, 0.04) 100%
+    );
+    background-size: 200% 100%;
+    animation: ogi-video-job-shimmer 2.2s ease-in-out infinite;
+  }
+
+  .ogi-video-job-shimmer--delay {
+    animation-delay: 0.35s;
+  }
+
+  .ogi-video-job-shimmer--delay-2 {
+    animation-delay: 0.7s;
+  }
+}

@@ -24,6 +24,17 @@
     "uploadUpToReferenceImages": "Upload up to {count} reference images",
     "uploadingProgress": "{title}: {progress}% uploaded"
   },
+  "jobStatus": {
+    "rendering": "Rendering",
+    "queued": "Queued",
+    "queuedPosition": "Queued · position {position}",
+    "estimatedTime": "Est. ~2 min",
+    "rendersInProgress": "{count} render in progress",
+    "rendersInProgressPlural": "{count} renders in progress",
+    "describeNext": "Describe your next video…",
+    "failed": "Generation failed",
+    "dismiss": "Dismiss"
+  },
   "placeholders": {
     "editVideo": "Describe how to edit the video",
     "continueVideo": "Describe how to continue the video",

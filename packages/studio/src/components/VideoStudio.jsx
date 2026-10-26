@@ -14,6 +14,15 @@ import { fetchVideoGenerationCostEstimate } from "../utils/videoGenerationCostEs
 import { buildVideoCostEstimatePayload } from "../utils/buildVideoCostEstimatePayload.js";
 import { useVideoCostEstimate } from "../hooks/useVideoCostEstimate.js";
 import VideoGenerationCostEstimate from "./VideoGenerationCostEstimate.jsx";
+import { VideoGenerationPendingCard } from "./VideoGenerationPendingCard.jsx";
+import {
+  VIDEO_JOB_STATUS,
+  countActiveVideoJobs,
+  getVideoJobQueuePosition,
+  isPendingVideoJob,
+  patchVideoHistoryEntry,
+  stripNonPersistableVideoHistory,
+} from "../utils/videoGenerationJobQueue.js";
 import { formatErrorMessage } from "../utils/formatError.js";
 import { scopedPersistKey, migrateLegacyPersistKey } from "../persistKey.js";
 import DrawModal from "./DrawModal.jsx";
@@ -937,7 +946,6 @@ export default function VideoStudio({
   const uploadedVideoUrl = uploadedVideoUrls[0] || null;
 
   // ── generation / canvas ──
-  const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
   const [canvasUrl, setCanvasUrl] = useState(null);
@@ -980,6 +988,8 @@ export default function VideoStudio({
   const workflowVariantPreferencesRef = useRef(new Map());
   const workflowUploadSlotRef = useRef(null);
   const workflowDraftSessionRef = useRef(0);
+  const generationQueueRef = useRef([]);
+  const generationDrainActiveRef = useRef(false);
   const mediaRef = useRef(null);
   mediaRef.current = {
     imageUrls: uploadedImageUrls,
@@ -1000,6 +1010,38 @@ export default function VideoStudio({
 
   // ── derived data ──
   const history = historyItems ?? localHistory;
+  const activeVideoJobs = useMemo(() => countActiveVideoJobs(history), [history]);
+
+  const patchLocalHistoryEntry = useCallback((entryId, patch) => {
+    setLocalHistory((prev) => patchVideoHistoryEntry(prev, entryId, patch));
+  }, []);
+
+  const drainVideoGenerationQueue = useCallback(async () => {
+    if (generationDrainActiveRef.current) return;
+    generationDrainActiveRef.current = true;
+    while (generationQueueRef.current.length > 0) {
+      const next = generationQueueRef.current.shift();
+      if (!next) continue;
+      patchLocalHistoryEntry(next.jobId, {
+        status: VIDEO_JOB_STATUS.RUNNING,
+        startedAt: Date.now(),
+      });
+      try {
+        await next.run();
+      } catch (err) {
+        console.error("[VideoStudio] queued generation failed", err);
+      }
+    }
+    generationDrainActiveRef.current = false;
+  }, [patchLocalHistoryEntry]);
+
+  const enqueueVideoGeneration = useCallback(
+    (jobId, run) => {
+      generationQueueRef.current.push({ jobId, run });
+      void drainVideoGenerationQueue();
+    },
+    [drainVideoGenerationQueue],
+  );
 
   // See ImageStudio's handleDeleteEntry: when historyItems is server-backed
   // (White Label / backfilled sessions), localHistory isn't what's rendered,
@@ -1592,7 +1634,9 @@ export default function VideoStudio({
         }
         setWorkflowMediaDrafts(persistedDrafts);
         if (data.prompt) setPrompt(data.prompt);
-        if (data.localHistory) setLocalHistory(data.localHistory);
+        if (data.localHistory) {
+          setLocalHistory(stripNonPersistableVideoHistory(data.localHistory));
+        }
 
         // Update control visibility based on restored model/mode
         commonParameterValuesRef.current = {
@@ -1638,7 +1682,7 @@ export default function VideoStudio({
           uploadedAudioUrls,
           workflowMediaDrafts,
           prompt,
-          localHistory,
+          localHistory: stripNonPersistableVideoHistory(localHistory),
         };
         localStorage.setItem(PERSIST_KEY, JSON.stringify(state));
       } catch (err) {
@@ -2403,11 +2447,33 @@ export default function VideoStudio({
       }
     }
 
-    onGenerationStart?.();
-    setGenerating(true);
+    const jobId = `vj-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    const pendingEntry = {
+      id: jobId,
+      url: null,
+      status: VIDEO_JOB_STATUS.QUEUED,
+      prompt: trimmedPrompt,
+      model: selectedModel,
+      ...groupedHistorySettings,
+      ...(!grouped && !selectedVeoTool
+        ? {
+            aspect_ratio: selectedAr,
+            duration: selectedDuration,
+            resolution: selectedResolution,
+          }
+        : {}),
+      timestamp: new Date().toISOString(),
+    };
+    setLocalHistory((prev) => [pendingEntry, ...prev].slice(0, 30));
+    if (!promptDisabled) {
+      setPrompt("");
+    }
     setGenerateError(null);
 
-    try {
+    enqueueVideoGeneration(jobId, async () => {
+      onGenerationStart?.();
+
+      try {
       let res;
       const referenceParams = selectedWorkflowId
         ? buildVideoWorkflowMediaParams(
@@ -2442,11 +2508,12 @@ export default function VideoStudio({
             model: selectedModel,
             ...groupedHistorySettings,
             timestamp: new Date().toISOString(),
+            status: VIDEO_JOB_STATUS.SUCCEEDED,
           },
           res,
           estimate,
         );
-        addToLocalHistory(entry);
+        patchLocalHistoryEntry(jobId, entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -2493,11 +2560,12 @@ export default function VideoStudio({
             } : {}),
             ...groupedHistorySettings,
             timestamp: new Date().toISOString(),
+            status: VIDEO_JOB_STATUS.SUCCEEDED,
           },
           res,
           estimate,
         );
-        addToLocalHistory(entry);
+        patchLocalHistoryEntry(jobId, entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -2549,11 +2617,12 @@ export default function VideoStudio({
             } : {}),
             ...groupedHistorySettings,
             timestamp: new Date().toISOString(),
+            status: VIDEO_JOB_STATUS.SUCCEEDED,
           },
           res,
           estimate,
         );
-        addToLocalHistory(entry);
+        patchLocalHistoryEntry(jobId, entry);
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -2564,15 +2633,19 @@ export default function VideoStudio({
             meta: entry.meta,
           });
       }
-    } catch (e) {
-      console.error("[VideoStudio]", e);
-      const errMsg = formatErrorMessage(e, copy.errors.videoGenerationFailed);
-      if (onGenerationError) onGenerationError(errMsg);
-      else toast.error(errMsg);
-    } finally {
-      setGenerating(false);
-      onGenerationEnd?.();
-    }
+      } catch (e) {
+        console.error("[VideoStudio]", e);
+        const errMsg = formatErrorMessage(e, copy.errors.videoGenerationFailed);
+        patchLocalHistoryEntry(jobId, {
+          status: VIDEO_JOB_STATUS.FAILED,
+          error: errMsg,
+        });
+        if (onGenerationError) onGenerationError(errMsg);
+        else toast.error(errMsg);
+      } finally {
+        onGenerationEnd?.();
+      }
+    });
   }, [
     apiKey,
     copy,
@@ -2601,8 +2674,9 @@ export default function VideoStudio({
     veoContinuation,
     mediaUploading,
     getCurrentModel,
-    addToLocalHistory,
     enrichHistoryEntry,
+    enqueueVideoGeneration,
+    patchLocalHistoryEntry,
     tryEstimateCost,
     showVideoInCanvas,
     onGenerationComplete,
@@ -2715,6 +2789,22 @@ export default function VideoStudio({
                 : copy.placeholders.optionalContinueVideo
               : copy.placeholders.describeVideo;
 
+  const composerPlaceholder =
+    activeVideoJobs > 0
+      ? copy.jobStatus?.describeNext ?? "Describe your next video…"
+      : promptPlaceholder;
+
+  const activeJobsLabel =
+    activeVideoJobs === 1
+      ? (copy.jobStatus?.rendersInProgress ?? "{count} render in progress").replace(
+          "{count}",
+          String(activeVideoJobs),
+        )
+      : (copy.jobStatus?.rendersInProgressPlural ?? "{count} renders in progress").replace(
+          "{count}",
+          String(activeVideoJobs),
+        );
+
   const {
     triggerRef: workflowTriggerRef,
     menuRef: workflowMenuRef,
@@ -2745,12 +2835,32 @@ export default function VideoStudio({
         {history.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {history.map((entry, idx) => {
+              if (isPendingVideoJob(entry)) {
+                return (
+                  <VideoGenerationPendingCard
+                    key={entry.id || idx}
+                    entry={entry}
+                    queuePosition={getVideoJobQueuePosition(history, entry.id)}
+                    copy={copy}
+                    onDelete={
+                      entry.status === VIDEO_JOB_STATUS.FAILED
+                        ? () => {
+                            setLocalHistory((prev) =>
+                              prev.filter((item) => item.id !== entry.id),
+                            );
+                          }
+                        : undefined
+                    }
+                  />
+                );
+              }
+
               const isSeedance2 = isContinuationSourceModel("seedance-2-extend", entry.model);
               return (
                 <div
                   key={entry.id || idx}
                   className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col cursor-pointer"
-                  onClick={() => setFullscreenUrl(entry.url)}
+                  onClick={() => entry.url && setFullscreenUrl(entry.url)}
                 >
                   <video
                     src={entry.url}
@@ -2946,6 +3056,11 @@ export default function VideoStudio({
 
       {/* ── BOTTOM PROMPT BAR ── */}
       <PromptComposer>
+        {activeVideoJobs > 0 ? (
+          <div className="flex justify-center pb-0.5">
+            <span data-ogi-video-jobs-chip>{activeJobsLabel}</span>
+          </div>
+        ) : null}
           <div className="flex flex-col gap-3">
             {/* Inline list of uploaded media files */}
             <div className="flex items-start gap-2.5 flex-wrap">
@@ -3153,7 +3268,7 @@ export default function VideoStudio({
                 ref={textareaRef}
                 value={prompt}
                 onChange={handlePromptInput}
-                placeholder={promptPlaceholder}
+                placeholder={composerPlaceholder}
                 disabled={promptDisabled}
               />
               )}
@@ -3684,28 +3799,21 @@ export default function VideoStudio({
               />
               <PromptAction
                 onClick={handleGenerate}
-                disabled={generating || mediaUploading || (selectedTool?.group === "continueGenerated" && !hasContinuationSource) || (selectedVeoTool && !selectedVeoSource)}
+                disabled={
+                  mediaUploading ||
+                  (selectedTool?.group === "continueGenerated" && !hasContinuationSource) ||
+                  (selectedVeoTool && !selectedVeoSource)
+                }
                 className="flex-col gap-0.5 py-2.5"
               >
-                {generating ? (
-                  <>
-                    <span className="animate-spin inline-block text-black">
-                      ◌
-                    </span>
-                    <span>{copy.controls.generating}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{copy.controls.generate}</span>
-                    <VideoGenerationCostEstimate
-                      variant="button"
-                      status={liveCostEstimate.status}
-                      label={liveCostEstimate.label}
-                      apiProviderId={apiProviderId}
-                      copy={copy}
-                    />
-                  </>
-                )}
+                <span>{copy.controls.generate}</span>
+                <VideoGenerationCostEstimate
+                  variant="button"
+                  status={liveCostEstimate.status}
+                  label={liveCostEstimate.label}
+                  apiProviderId={apiProviderId}
+                  copy={copy}
+                />
               </PromptAction>
             </div>
           </PromptFooter>
