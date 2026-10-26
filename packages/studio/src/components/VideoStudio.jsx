@@ -2073,12 +2073,19 @@ export default function VideoStudio({
   useEffect(() => {
     if (!openDropdown) return;
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpenDropdown(null);
+      const target = e.target;
+      if (target instanceof Node && dropdownRef.current?.contains(target)) {
+        return;
       }
+      setOpenDropdown(null);
     };
-    window.addEventListener("click", handler);
-    return () => window.removeEventListener("click", handler);
+    const timeout = window.setTimeout(() => {
+      document.addEventListener("mousedown", handler);
+    }, 0);
+    return () => {
+      window.clearTimeout(timeout);
+      document.removeEventListener("mousedown", handler);
+    };
   }, [openDropdown]);
 
   const handlePromptInput = (e) => {
@@ -2828,12 +2835,12 @@ export default function VideoStudio({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-hidden"
+      className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-x-hidden overflow-y-hidden"
     >
       {/* ── CENTRAL GALLERY AREA ── */}
-      <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
+      <div className="pointer-events-none flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
         {history.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
+          <div className="pointer-events-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {history.map((entry, idx) => {
               if (isPendingVideoJob(entry)) {
                 return (
@@ -3061,7 +3068,7 @@ export default function VideoStudio({
             <span data-ogi-video-jobs-chip>{activeJobsLabel}</span>
           </div>
         ) : null}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {/* Inline list of uploaded media files */}
             <div className="flex items-start gap-2.5 flex-wrap">
               {selectedWorkflowId ? (
@@ -3325,7 +3332,12 @@ export default function VideoStudio({
 
           {/* Bottom row: controls + generate */}
           <PromptFooter>
-            <PromptControls ref={dropdownRef}>
+            <div
+              ref={dropdownRef}
+              data-ogi-prompt-footer-scroll=""
+              className="flex min-w-0 flex-1 items-center gap-2 overflow-visible"
+            >
+            <PromptControls>
               {/* Model btn */}
               <div className="relative">
                 <button
@@ -3647,15 +3659,6 @@ export default function VideoStudio({
                 </div>
               )}
 
-              {/* Duration btn */}
-              <VideoGenerationCostEstimate
-                variant="chip"
-                status={liveCostEstimate.status}
-                label={liveCostEstimate.label}
-                apiProviderId={apiProviderId}
-                copy={copy}
-              />
-
               {groupedConfiguration && (
                 <VideoOptionControl
                   label={selectedWorkflowId === "extend_uploaded_video" ? groupCopy.extensionDuration : copy.dropdowns.duration}
@@ -3789,14 +3792,6 @@ export default function VideoStudio({
               )}
             </PromptControls>
 
-            <div className="flex flex-col items-stretch sm:items-end gap-2 shrink-0">
-              <VideoGenerationCostEstimate
-                variant="stacked"
-                status={liveCostEstimate.status}
-                label={liveCostEstimate.label}
-                apiProviderId={apiProviderId}
-                copy={copy}
-              />
               <PromptAction
                 onClick={handleGenerate}
                 disabled={
@@ -3804,7 +3799,7 @@ export default function VideoStudio({
                   (selectedTool?.group === "continueGenerated" && !hasContinuationSource) ||
                   (selectedVeoTool && !selectedVeoSource)
                 }
-                className="flex-col gap-0.5 py-2.5"
+                className="flex-col gap-0 py-1 px-3.5 min-h-[30px]"
               >
                 <span>{copy.controls.generate}</span>
                 <VideoGenerationCostEstimate

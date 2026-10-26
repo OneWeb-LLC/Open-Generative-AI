@@ -10,22 +10,22 @@ import {
 } from "react";
 
 const DEFAULT_POSITION_CLASS =
-  "absolute bottom-4 w-full max-w-[95%] lg:max-w-4xl z-30 animate-fade-in-up";
+  "absolute bottom-4 left-0 right-0 z-[100] mx-auto w-[min(100%,calc(100%-2rem))] max-w-4xl animate-fade-in-up pointer-events-auto px-0";
 
 /* Surfaces/accents read --ogi-* from the OWeb host when embedded so Light,
    Dark (Google-neutral), and Cosmic themes stay coherent. Fallbacks keep the
    standalone MuAPI look. */
 const DEFAULT_PANEL_CLASS =
-  "w-full bg-[color:var(--ogi-panel,rgba(15,15,18,0.92))] backdrop-blur-2xl rounded-[1.75rem] border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] p-3.5 sm:p-4 flex flex-col gap-3 shadow-[var(--ogi-shadow,0_12px_40px_rgba(0,0,0,0.45))]";
+  "w-full overflow-visible bg-[color:var(--ogi-panel,rgba(15,15,18,0.92))] backdrop-blur-2xl rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] p-2.5 sm:p-3 flex flex-col gap-2 shadow-[var(--ogi-shadow,0_12px_40px_rgba(0,0,0,0.45))]";
 
 const DEFAULT_TEXTAREA_CLASS =
-  "w-full bg-transparent border-none text-[color:var(--ogi-fg,#fff)] text-sm placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.28))] focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar disabled:opacity-40";
+  "w-full bg-transparent border-none text-[color:var(--ogi-fg,#fff)] text-sm placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.28))] focus:outline-none resize-none pt-0.5 leading-relaxed min-h-[32px] max-h-[150px] md:max-h-[220px] overflow-y-auto custom-scrollbar disabled:opacity-40";
 
 const DEFAULT_ACTION_CLASS =
-  "bg-[color:var(--ogi-accent,#22d3ee)] text-[color:var(--ogi-accent-fg,#04121a)] px-7 py-3 rounded-full font-bold text-sm hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-[0_8px_24px_var(--ogi-accent-soft,rgba(34,211,238,0.22))] border border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.12))] z-10 disabled:opacity-50 disabled:cursor-not-allowed";
+  "bg-[color:var(--ogi-accent,#22d3ee)] text-[color:var(--ogi-accent-fg,#04121a)] px-4 py-1.5 rounded-full font-semibold text-xs hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_4px_16px_var(--ogi-accent-soft,rgba(34,211,238,0.18))] border border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.12))] z-10 disabled:opacity-50 disabled:cursor-not-allowed";
 
 const CONTROL_LAYOUT_CLASS =
-  "h-[38px] flex items-center gap-2 rounded-lg transition-all border group whitespace-nowrap shadow-inner focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
+  "h-[30px] flex items-center gap-1.5 rounded-lg transition-all border group whitespace-nowrap shadow-inner focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
 
 const CONTROL_IDLE_CLASS =
   "text-[color:var(--ogi-fg,#fff)] bg-[color:var(--ogi-control,rgba(22,22,26,0.6))] hover:bg-[color:var(--ogi-control-hover,rgba(32,32,38,0.8))] border-[color:var(--ogi-border,rgba(255,255,255,0.06))]";
@@ -37,7 +37,7 @@ const MEDIA_CONTROL_LAYOUT_CLASS =
   "w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden group focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
 
 const DEFAULT_POPOVER_POSITION_CLASS =
-  "absolute bottom-[calc(100%+12px)] left-0 z-50";
+  "absolute bottom-[calc(100%+12px)] left-0 z-[80]";
 
 const DEFAULT_POPOVER_CLASS =
   "rounded-xl p-3.5 shadow-[var(--ogi-shadow,0_10px_40px_rgba(0,0,0,0.8))] border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] bg-[color:var(--ogi-panel-solid,#0c0c0f)] backdrop-blur-2xl min-w-[160px] max-h-[40vh] overflow-y-auto custom-scrollbar";
@@ -55,10 +55,10 @@ export function promptControlClassName({
   return joinClasses(
     CONTROL_LAYOUT_CLASS,
     iconOnly
-      ? "w-[38px] px-0 justify-center"
+      ? "w-[30px] px-0 justify-center"
       : compact
-        ? "px-3"
-        : "px-4",
+        ? "px-2.5"
+        : "px-3",
     active ? CONTROL_ACTIVE_CLASS : CONTROL_IDLE_CLASS,
     className,
   );
@@ -181,6 +181,7 @@ export const PromptPopover = forwardRef(function PromptPopover(
     if (!fitViewport) return;
     const position = () => {
       const popover = popoverRef.current;
+      if (!popover) return;
       popover.style.translate = "";
       popover.style.height = "";
       let left = 16;
@@ -201,10 +202,13 @@ export const PromptPopover = forwardRef(function PromptPopover(
       const bounds = popover.getBoundingClientRect();
       const shift = Math.max(left - bounds.left, Math.min(0, right - bounds.right));
       popover.style.translate = `${shift}px 0`;
-      if (bounds.top < top) popover.style.height = `${Math.max(0, bounds.bottom - top)}px`;
+      if (bounds.top < top) {
+        popover.style.height = `${Math.max(0, bounds.bottom - top)}px`;
+      }
     };
     position();
     const popover = popoverRef.current;
+    if (!popover) return;
     popover.addEventListener("toggle", position, true);
     window.addEventListener("resize", position);
     return () => {
@@ -216,6 +220,7 @@ export const PromptPopover = forwardRef(function PromptPopover(
     <div
       {...props}
       ref={popoverRef}
+      data-ogi-prompt-popover=""
       className={joinClasses(
         positionClassName,
         DEFAULT_POPOVER_CLASS,
@@ -422,7 +427,7 @@ export function PromptFooter({ children, className = "" }) {
   return (
     <div
       className={joinClasses(
-        "flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 pt-3 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.04))] relative",
+        "flex flex-row items-center gap-2 pt-2 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.04))] relative z-[2] min-w-0 overflow-visible",
         className,
       )}
     >
@@ -440,7 +445,7 @@ export const PromptControls = forwardRef(function PromptControls(
       ref={ref}
       data-ogi-prompt-controls=""
       className={joinClasses(
-        "flex items-center gap-2 relative flex-nowrap overflow-x-auto no-scrollbar pb-1 md:pb-0 md:flex-wrap md:overflow-visible",
+        "flex items-center gap-1.5 relative flex-1 min-w-0 flex-wrap md:flex-nowrap overflow-visible",
         className,
       )}
     >

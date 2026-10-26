@@ -46,10 +46,20 @@ export default function VideoGenerationCostEstimate({
       : costCopy.unavailableTitle.replace("{provider}", providerName);
 
   if (variant === "button") {
-    if (status !== "ready" || !label) return null;
+    const buttonAmount =
+      status === "ready" && label
+        ? label
+        : status === "loading"
+          ? costCopy.loading
+          : null;
+    if (!buttonAmount) return null;
     return (
-      <span className="block text-[11px] font-semibold text-black/70 tabular-nums leading-tight">
-        {label}
+      <span
+        className={`block text-[10px] font-semibold tabular-nums leading-tight text-[color:var(--ogi-accent-fg,#04121a)]/70 ${
+          status === "loading" ? "animate-pulse opacity-80" : ""
+        }`}
+      >
+        {buttonAmount}
       </span>
     );
   }
