@@ -16,25 +16,25 @@ const DEFAULT_POSITION_CLASS =
    Dark (Google-neutral), and Cosmic themes stay coherent. Fallbacks keep the
    standalone MuAPI look. */
 const DEFAULT_PANEL_CLASS =
-  "w-full overflow-visible bg-[color:var(--ogi-panel,rgba(15,15,18,0.92))] backdrop-blur-2xl rounded-2xl border border-[color:var(--ogi-border,rgba(255,255,255,0.08))] p-2.5 sm:p-3 flex flex-col gap-2 shadow-[var(--ogi-shadow,0_12px_40px_rgba(0,0,0,0.45))]";
+  "w-full overflow-visible bg-[color:var(--ogi-panel-solid,var(--ogi-panel,rgba(32,33,36,0.96)))] backdrop-blur-xl rounded-[28px] border border-[color:var(--ogi-border,rgba(255,255,255,0.06))] p-3 sm:p-4 flex flex-col gap-2.5 shadow-[0_1px_2px_rgba(0,0,0,0.22),0_12px_32px_-8px_rgba(0,0,0,0.45)]";
 
 const DEFAULT_TEXTAREA_CLASS =
-  "w-full bg-transparent border-none text-[color:var(--ogi-fg,#fff)] text-sm placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.28))] focus:outline-none resize-none pt-0.5 leading-relaxed min-h-[32px] max-h-[150px] md:max-h-[220px] overflow-y-auto custom-scrollbar disabled:opacity-40";
+  "w-full bg-transparent border-none text-[color:var(--ogi-fg,#fff)] text-[15px] sm:text-sm placeholder:text-[color:var(--ogi-faint,rgba(255,255,255,0.38))] focus:outline-none focus:ring-0 resize-none px-0.5 pt-0.5 pb-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[220px] overflow-y-auto custom-scrollbar disabled:opacity-40";
 
 const DEFAULT_ACTION_CLASS =
-  "bg-[color:var(--ogi-accent,#22d3ee)] text-[color:var(--ogi-accent-fg,#04121a)] px-4 py-1.5 rounded-full font-semibold text-xs hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-[0_4px_16px_var(--ogi-accent-soft,rgba(34,211,238,0.18))] border border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.12))] z-10 disabled:opacity-50 disabled:cursor-not-allowed";
+  "bg-[color:var(--ogi-accent,var(--primary,#1a73e8))] text-[color:var(--ogi-accent-solid-fg,var(--ogi-accent-fg,#fff))] px-5 py-2 rounded-full font-medium text-sm hover:brightness-[1.03] active:scale-[0.98] transition-[transform,filter] duration-150 flex items-center justify-center gap-1.5 shrink-0 border-0 shadow-none z-10 disabled:opacity-50 disabled:cursor-not-allowed";
 
 const CONTROL_LAYOUT_CLASS =
-  "h-[30px] flex items-center gap-1.5 rounded-lg transition-all border group whitespace-nowrap shadow-inner focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
+  "h-8 flex items-center gap-1 rounded-full transition-colors duration-150 group whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(255,255,255,0.12))] focus-visible:ring-offset-0";
 
 const CONTROL_IDLE_CLASS =
-  "text-[color:var(--ogi-fg,#fff)] bg-[color:var(--ogi-control,rgba(22,22,26,0.6))] hover:bg-[color:var(--ogi-control-hover,rgba(32,32,38,0.8))] border-[color:var(--ogi-border,rgba(255,255,255,0.06))]";
+  "text-[color:var(--ogi-muted,rgba(255,255,255,0.72))] bg-transparent hover:bg-[color:var(--ogi-control,rgba(255,255,255,0.06))] border border-transparent";
 
 const CONTROL_ACTIVE_CLASS =
-  "text-[color:var(--ogi-accent,#22d3ee)] bg-[color:var(--ogi-accent-soft,rgba(34,211,238,0.1))] hover:bg-[color:var(--ogi-accent-soft,rgba(34,211,238,0.15))] border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.25))]";
+  "text-[color:var(--ogi-fg,#fff)] bg-[color:var(--ogi-control,rgba(255,255,255,0.08))] hover:bg-[color:var(--ogi-control-hover,rgba(255,255,255,0.1))] border border-[color:var(--ogi-border,rgba(255,255,255,0.08))]";
 
 const MEDIA_CONTROL_LAYOUT_CLASS =
-  "w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden group focus:outline-none focus-visible:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.45))] focus-visible:ring-1 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(34,211,238,0.3))]";
+  "w-10 h-10 shrink-0 rounded-full border transition-colors duration-150 flex items-center justify-center relative overflow-hidden group focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ogi-accent-ring,rgba(255,255,255,0.12))] focus-visible:ring-offset-0";
 
 const DEFAULT_POPOVER_POSITION_CLASS =
   "absolute bottom-[calc(100%+12px)] left-0 z-[80]";
@@ -71,8 +71,8 @@ export function promptMediaButtonClassName({
   return joinClasses(
     MEDIA_CONTROL_LAYOUT_CLASS,
     active
-      ? "border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.6))] bg-[color:var(--ogi-accent-soft,rgba(34,211,238,0.05))] hover:border-[color:var(--ogi-accent,#22d3ee)]"
-      : "border-[color:var(--ogi-border,rgba(255,255,255,0.06))] bg-[color:var(--ogi-control,rgba(255,255,255,0.03))] hover:bg-[color:var(--ogi-control-hover,rgba(255,255,255,0.06))] hover:border-[color:var(--ogi-accent-ring,rgba(34,211,238,0.4))]",
+      ? "border-[color:var(--ogi-border-strong,var(--ogi-border))] bg-[color:var(--ogi-control-hover,rgba(255,255,255,0.1))]"
+      : "border-[color:var(--ogi-border,rgba(255,255,255,0.08))] bg-transparent hover:bg-[color:var(--ogi-control,rgba(255,255,255,0.05))] hover:border-[color:var(--ogi-border,rgba(255,255,255,0.12))]",
     className,
   );
 }
@@ -81,7 +81,7 @@ export const PROMPT_MEDIA_PREVIEW_CLASS =
   "relative w-10 h-10 shrink-0 rounded-full border border-[color:var(--ogi-border,rgba(255,255,255,0.1))] overflow-hidden shadow-md group";
 
 export const PROMPT_CONTROL_LABEL_CLASS =
-  "text-xs font-semibold text-current opacity-70 group-hover:text-[color:var(--ogi-accent,#22d3ee)] group-hover:opacity-100 transition-all";
+  "text-xs font-medium text-current opacity-80 group-hover:opacity-100 transition-opacity";
 
 export function PromptChevronIcon({ className = "" }) {
   return (
@@ -360,7 +360,10 @@ export function PromptComposer({
       className={joinClasses(positionClassName, className)}
       style={style}
     >
-      <div className={joinClasses(DEFAULT_PANEL_CLASS, panelClassName)}>
+      <div
+        data-ogi-prompt-panel=""
+        className={joinClasses(DEFAULT_PANEL_CLASS, panelClassName)}
+      >
         {children}
       </div>
     </div>
@@ -427,7 +430,7 @@ export function PromptFooter({ children, className = "" }) {
   return (
     <div
       className={joinClasses(
-        "flex flex-row items-center gap-2 pt-2 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.04))] relative z-[2] min-w-0 overflow-visible",
+        "flex flex-row items-center gap-2 pt-1.5 mt-0.5 border-t border-[color:var(--ogi-border,rgba(255,255,255,0.05))] relative z-[2] min-w-0 overflow-visible",
         className,
       )}
     >
