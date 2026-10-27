@@ -1,6 +1,3 @@
-import {
-  isMuapiVideoModelGatewaySupported,
-} from '../../../lib/ogi/gateway-video-capability.js';
 import { OWEB_SOL_MODEL_IDS } from './owebSolModels.js';
 
 /**
@@ -12,17 +9,20 @@ export function isVideoModelVisibleForApiProvider(model, apiProviderId) {
   const modelId = model?.id;
   const allowed = model?.generativeProviders;
 
+  if (apiProviderId === 'vercel-ai-gateway') {
+    if (OWEB_SOL_MODEL_IDS.has(modelId)) return false;
+    // Gateway mode uses explicit catalog stubs (and live gateway API extras), not the
+    // full MuAPI matrix — avoids showing Seedance 1.x / extend routes that would
+    // silently map to the wrong upstream model.
+    return Boolean(allowed?.includes('vercel-ai-gateway'));
+  }
+
   if (allowed?.length) {
     return allowed.includes(apiProviderId);
   }
 
   if (apiProviderId === 'comfy-runpod') {
     return false;
-  }
-
-  if (apiProviderId === 'vercel-ai-gateway') {
-    if (OWEB_SOL_MODEL_IDS.has(modelId)) return false;
-    return isMuapiVideoModelGatewaySupported(modelId);
   }
 
   if (OWEB_SOL_MODEL_IDS.has(modelId)) {

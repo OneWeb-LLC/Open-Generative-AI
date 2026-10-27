@@ -19,6 +19,14 @@ test('resolveGatewayVideoModelStrict maps studio catalog ids', () => {
     'spacexai/grok-imagine-video',
   );
   assert.equal(resolveGatewayVideoModelStrict('seedance-lite-t2v'), null);
+  assert.equal(
+    resolveGatewayVideoModelStrict('seedance-2-t2v'),
+    'bytedance/seedance-2.0',
+  );
+  assert.equal(
+    resolveGatewayVideoModelStrict('seedance-2.5-text-to-video'),
+    'bytedance/seedance-2.5',
+  );
 });
 
 test('formatGatewayVideoPriceSuffix renders compact USD label', () => {

@@ -23,11 +23,18 @@ test('muapi hides Oweb Sol', () => {
   assert.equal(isVideoModelVisibleForApiProvider({ id: 'seedance-lite-t2v' }, 'muapi-proxy'), true);
 });
 
-test('vercel gateway shows mapped MuAPI catalog models', () => {
-  assert.equal(isVideoModelVisibleForApiProvider({ id: 'veo3.1-text-to-video' }, 'vercel-ai-gateway'), true);
-  assert.equal(isVideoModelVisibleForApiProvider({ id: 'grok-imagine-text-to-video' }, 'vercel-ai-gateway'), true);
-  assert.equal(isVideoModelVisibleForApiProvider({ id: 'seedance-2.5-text-to-video' }, 'vercel-ai-gateway'), true);
+test('vercel gateway only shows explicit gateway catalog stubs', () => {
+  assert.equal(isVideoModelVisibleForApiProvider({ id: 'veo3.1-text-to-video' }, 'vercel-ai-gateway'), false);
+  assert.equal(isVideoModelVisibleForApiProvider({ id: 'grok-imagine-text-to-video' }, 'vercel-ai-gateway'), false);
+  assert.equal(isVideoModelVisibleForApiProvider({ id: 'seedance-2.5-text-to-video' }, 'vercel-ai-gateway'), false);
   assert.equal(isVideoModelVisibleForApiProvider({ id: 'seedance-lite-t2v' }, 'vercel-ai-gateway'), false);
+  assert.equal(
+    isVideoModelVisibleForApiProvider(
+      { id: 'vercel-seedance-2.5-t2v', generativeProviders: ['vercel-ai-gateway'] },
+      'vercel-ai-gateway',
+    ),
+    true,
+  );
 });
 
 test('vercel gateway catalog stubs are provider-scoped', () => {

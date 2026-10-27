@@ -173,13 +173,19 @@ async function generateViaComfyRunpod(apiKey, params, { imageMode = false } = {}
 async function generateViaVercelGateway(apiKey, params, { imageMode = false } = {}) {
     const base = (clientConfig.proxyPath || '/api/vercel-gateway').replace(/\/$/, '');
     const modelInfo = imageMode ? getI2VModelById(params.model) : getVideoModelById(params.model);
+    const gatewayModel = modelInfo?.gatewayModel;
+    if (!gatewayModel) {
+        throw new Error(
+            `Model "${params.model}" is not available on Vercel AI Gateway. Pick a gateway-listed model or switch the Model layer to MuAPI.`,
+        );
+    }
     const payload = {
         model: params.model,
+        gatewayModel,
         prompt: params.prompt,
         aspect_ratio: params.aspect_ratio,
         duration: params.duration,
         resolution: params.resolution,
-        ...(modelInfo?.gatewayModel ? { gatewayModel: modelInfo.gatewayModel } : {}),
     };
     if (imageMode) {
         payload.image_url =
