@@ -55,7 +55,7 @@ export default function VideoGenerationCostEstimate({
     if (!buttonAmount) return null;
     return (
       <span
-        className={`block text-[10px] font-semibold tabular-nums leading-tight text-[color:var(--ogi-accent-fg,#04121a)]/70 ${
+        className={`block text-[10px] font-semibold tabular-nums leading-tight text-current opacity-75 ${
           status === "loading" ? "animate-pulse opacity-80" : ""
         }`}
       >
