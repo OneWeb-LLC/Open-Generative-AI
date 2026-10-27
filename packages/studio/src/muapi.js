@@ -13,6 +13,7 @@ import { getModelMediaCapabilities, mapReferenceParams } from './modelCapabiliti
 import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
 import { buildGenerationMetadata } from './utils/generationMetadata.js';
+import { snapVideoCostEstimateFields } from './utils/muapiVideoCostEstimateParams.js';
 import {
     isOwebHostedClientKey,
     isPlatformManagedMuapiKey,
@@ -464,6 +465,9 @@ export async function estimateVideoCost(apiKey, params, options = {}, signal) {
         }
     }
     payload = includeRequiredArrayDefaults(modelInfo, payload);
+    const modelId = params?.model || modelInfo?.id;
+    const snapped = snapVideoCostEstimateFields(modelId, modelKind, payload);
+    payload = { ...payload, ...snapped };
 
     const response = await fetch(`${getBaseUrl()}/api/v1/models/${endpoint}/estimate-cost`, {
         method: 'POST',
@@ -484,13 +488,12 @@ export async function estimateVideoCost(apiKey, params, options = {}, signal) {
     if (typeof data?.cost !== 'number' || !Number.isFinite(data.cost) || data.cost < 0) {
         throw new Error('Cost estimate returned an invalid cost.');
     }
-    if (typeof data.currency !== 'string' || !/^[A-Za-z]{3}$/.test(data.currency.trim())) {
-        throw new Error('Cost estimate returned an invalid currency.');
-    }
+    const currencyRaw = typeof data.currency === 'string' ? data.currency.trim() : '';
+    const currency = /^[A-Za-z]{3}$/.test(currencyRaw) ? currencyRaw.toUpperCase() : 'USD';
 
     return {
         cost: data.cost,
-        currency: data.currency.trim().toUpperCase(),
+        currency,
     };
 }
 
@@ -503,7 +506,10 @@ export async function estimateV2VCost(apiKey, params, signal) {
         throw new Error('A V2V model is required to estimate cost.');
     }
 
-    const payload = buildVideoToolPayload(modelInfo, params);
+    let payload = buildVideoToolPayload(modelInfo, params);
+    payload = includeRequiredArrayDefaults(modelInfo, payload);
+    const snapped = snapVideoCostEstimateFields(params?.model || modelInfo?.id, 'v2v', payload);
+    payload = { ...payload, ...snapped };
     const response = await fetch(`${getBaseUrl()}/api/v1/models/${endpoint}/estimate-cost`, {
         method: 'POST',
         headers: {
@@ -529,13 +535,12 @@ export async function estimateV2VCost(apiKey, params, signal) {
     if (typeof data?.cost !== 'number' || !Number.isFinite(data.cost) || data.cost < 0) {
         throw new Error('Cost estimate returned an invalid cost.');
     }
-    if (typeof data.currency !== 'string' || !/^[A-Za-z]{3}$/.test(data.currency.trim())) {
-        throw new Error('Cost estimate returned an invalid currency.');
-    }
+    const currencyRaw = typeof data.currency === 'string' ? data.currency.trim() : '';
+    const currency = /^[A-Za-z]{3}$/.test(currencyRaw) ? currencyRaw.toUpperCase() : 'USD';
 
     return {
         cost: data.cost,
-        currency: data.currency.trim().toUpperCase(),
+        currency,
     };
 }
 

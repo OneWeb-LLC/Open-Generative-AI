@@ -1,9 +1,11 @@
 import {
+  getAspectRatiosForI2VModel,
   getDurationsForI2VModel,
   getDurationsForModel,
   getResolutionsForI2VModel,
   getResolutionsForVideoModel,
 } from '../models.js';
+import { snapVideoCostEstimateFields } from './muapiVideoCostEstimateParams.js';
 import { buildVideoCommonPayload } from '../videoModelParameters.js';
 import { getGroupedVideoConfiguration } from '../groupedVideoModels.js';
 import {
@@ -14,6 +16,12 @@ import {
   createModelParameterValues,
 } from '../modelParameters.js';
 import { buildVideoWorkflowMediaParams } from '../videoWorkflows.js';
+
+function withSnappedEstimateFields(params, modelKind) {
+  if (!params?.model) return params;
+  const snapped = snapVideoCostEstimateFields(params.model, modelKind, params);
+  return { ...params, ...snapped };
+}
 
 /**
  * Build the same payload shape used for MuAPI / local cost estimates.
@@ -88,7 +96,7 @@ export function buildVideoCostEstimatePayload(input) {
     if (currentModel?.hasPrompt && trimmedPrompt) {
       v2vParams.prompt = trimmedPrompt;
     }
-    return v2vParams;
+    return withSnappedEstimateFields(v2vParams, 'v2v');
   }
 
   if (modelKind === 'i2v') {
@@ -107,7 +115,7 @@ export function buildVideoCostEstimatePayload(input) {
     if (!grouped && resolutions.length > 0) i2vParams.resolution = selectedResolution;
     if (!grouped && selectedQuality) i2vParams.quality = selectedQuality;
     if (showEffect && selectedEffect) i2vParams.name = selectedEffect;
-    return i2vParams;
+    return withSnappedEstimateFields(i2vParams, 'i2v');
   }
 
   const params = {
@@ -128,5 +136,5 @@ export function buildVideoCostEstimatePayload(input) {
   if (!grouped && resolutions.length > 0) params.resolution = selectedResolution;
   if (!grouped && !selectedVeoTool && selectedQuality) params.quality = selectedQuality;
 
-  return params;
+  return withSnappedEstimateFields(params, 't2v');
 }
