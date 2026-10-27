@@ -5,7 +5,10 @@ import {
 } from './videoToolCapabilities.js';
 import { buildImageSizePayload } from './imageSizing.js';
 import { buildImageInputPayload, getImageInputValidationError, normalizePrimaryImageUrls } from './imageInputContracts.js';
-import { pollForGenerationResult } from './utils/generationLifecycle.js';
+import {
+    extractGenerationOutputUrl,
+    pollForGenerationResult,
+} from './utils/generationLifecycle.js';
 import { getModelMediaCapabilities, mapReferenceParams } from './modelCapabilities.js';
 import { buildSupplementalInputPayload } from './modelParameters.js';
 import { getGroupedVideoConfiguration } from './groupedVideoModels.js';
@@ -249,7 +252,7 @@ async function submitAndPoll(endpoint, payload, key, onRequestId, maxAttempts = 
     if (!requestId) return submitData;
     if (onRequestId) onRequestId(requestId);
     const result = await pollForResult(requestId, key, maxAttempts);
-    const outputUrl = result.outputs?.[0] || result.url || result.output?.url;
+    const outputUrl = extractGenerationOutputUrl(result);
     return normalizePredictionResult(submitData, result, outputUrl);
 }
 

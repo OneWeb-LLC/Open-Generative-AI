@@ -463,6 +463,7 @@ export const PromptAction = forwardRef(function PromptAction(
       {...props}
       ref={ref}
       type={type}
+      data-ogi-prompt-action=""
       className={joinClasses(DEFAULT_ACTION_CLASS, className)}
     >
       {children}
