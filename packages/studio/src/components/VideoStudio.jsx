@@ -556,20 +556,6 @@ function ModelDropdown({
         ? "v2v"
         : modelKind;
 
-  const priceByEntryId = useVideoPickerEntryPrices({
-    apiProviderId,
-    apiKey,
-    modelKind: pickerModelKind,
-    entries: modelEntries,
-    categoryId: pickerCategoryId,
-    selectedModelId: selectedModel,
-    gatewayPricingByGatewayModelId,
-    durationSeconds: estimateDurationSeconds,
-    aspectRatio: estimateAspectRatio,
-    resolution: estimateResolution,
-    enabled: true,
-  });
-
   const activeItemRef = useRef(null);
 
   useEffect(() => {
@@ -630,7 +616,7 @@ function ModelDropdown({
 
   const lf = search.toLowerCase();
 
-  const filtered = modelEntries.filter((entry) => {
+  const filtered = useMemo(() => modelEntries.filter((entry) => {
     const { family } = entry;
     // 1. Filter by provider tab
     if (selectedProvider !== "all") {
@@ -639,7 +625,22 @@ function ModelDropdown({
     }
     // 2. Filter by search query
     return entry.searchText.includes(lf);
+  }), [lf, modelEntries, selectedProvider]);
+
+  const priceByEntryId = useVideoPickerEntryPrices({
+    apiProviderId,
+    apiKey,
+    modelKind: pickerModelKind,
+    entries: filtered,
+    categoryId: pickerCategoryId,
+    selectedModelId: selectedModel,
+    gatewayPricingByGatewayModelId,
+    durationSeconds: estimateDurationSeconds,
+    aspectRatio: estimateAspectRatio,
+    resolution: estimateResolution,
+    enabled: true,
   });
+
   const selectedTool = getSeedanceToolConfiguration(selectedModel);
   const selectedVeoTool = getVeoToolConfiguration(selectedModel);
   const mainEntries = [];

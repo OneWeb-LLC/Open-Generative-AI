@@ -101,7 +101,21 @@ export function useVideoPickerEntryPrices({
     }
 
     const controller = new AbortController();
-    const targets = entries.slice(0, MUAPI_MAX_ENTRIES);
+    const targets = [];
+    const seen = new Set();
+    const selectedEntry = entries.find((entry) =>
+      entry.variantIds?.has?.(selectedModelId),
+    );
+    if (selectedEntry && !seen.has(selectedEntry.id)) {
+      targets.push(selectedEntry);
+      seen.add(selectedEntry.id);
+    }
+    for (const entry of entries) {
+      if (targets.length >= MUAPI_MAX_ENTRIES) break;
+      if (seen.has(entry.id)) continue;
+      targets.push(entry);
+      seen.add(entry.id);
+    }
 
     const tasks = targets.map((entry) => async () => {
       const entryModelKind = resolvePickerEntryModelKind(entry, categoryId, modelKind);
@@ -152,6 +166,7 @@ export function useVideoPickerEntryPrices({
     entryKey,
     modelKind,
     resolution,
+    selectedModelId,
   ]);
 
   return useMemo(() => {
