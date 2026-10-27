@@ -1,7 +1,24 @@
 import { muapiKeyHeaders } from "../muapiAuth.js";
 
-const SUCCESS_STATUSES = new Set(["completed", "succeeded", "success"]);
+const SUCCESS_STATUSES = new Set([
+  "completed",
+  "succeeded",
+  "success",
+  "complete",
+  "done",
+  "finished",
+]);
 const FAILURE_STATUSES = new Set(["failed", "error", "cancelled", "canceled"]);
+const PENDING_STATUSES = new Set([
+  "pending",
+  "queued",
+  "processing",
+  "running",
+  "in_progress",
+  "in-progress",
+  "started",
+  "submitted",
+]);
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -17,6 +34,64 @@ function createGenerationError(result, requestId) {
   error.requestId = requestId;
   error.generationResult = result;
   return error;
+}
+
+/**
+ * Normalize MuAPI / gateway poll payloads to a single playable media URL when present.
+ * @param {unknown} result
+ * @returns {string | null}
+ */
+export function extractGenerationOutputUrl(result) {
+  if (!result || typeof result !== "object") return null;
+  const record = result;
+
+  const outputs = record.outputs;
+  if (Array.isArray(outputs) && outputs.length > 0) {
+    const first = outputs[0];
+    if (typeof first === "string" && first.trim()) return first.trim();
+    if (first && typeof first === "object") {
+      for (const key of ["url", "video_url", "output_url", "media_url"]) {
+        const value = first[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+      }
+    }
+  }
+
+  if (typeof record.url === "string" && record.url.trim()) return record.url.trim();
+
+  const output = record.output;
+  if (output && typeof output === "object") {
+    for (const key of ["url", "video_url", "output_url"]) {
+      const value = output[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  }
+
+  if (typeof record.output_data === "string" && record.output_data.trim()) {
+    return record.output_data.trim();
+  }
+
+  return null;
+}
+
+/**
+ * @param {unknown} result
+ * @returns {boolean}
+ */
+export function isGenerationResultComplete(result) {
+  if (!result || typeof result !== "object") return false;
+
+  const status = String(result.status ?? "").toLowerCase();
+  if (FAILURE_STATUSES.has(status)) return false;
+  if (SUCCESS_STATUSES.has(status)) return true;
+
+  const outputUrl = extractGenerationOutputUrl(result);
+  if (!outputUrl) return false;
+
+  // Some providers return a media URL before flipping status off "processing".
+  if (!status || PENDING_STATUSES.has(status)) return true;
+
+  return true;
 }
 
 export function appendGenerationRefundNotice(message, error) {
@@ -72,8 +147,9 @@ export async function pollForGenerationResult({
       continue;
     }
 
+    if (isGenerationResultComplete(result)) return result;
+
     const status = result.status?.toLowerCase();
-    if (SUCCESS_STATUSES.has(status)) return result;
     if (FAILURE_STATUSES.has(status)) throw createGenerationError(result, requestId);
   }
 
