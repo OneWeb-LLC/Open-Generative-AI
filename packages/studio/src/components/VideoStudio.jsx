@@ -13,6 +13,7 @@ import {
 import { fetchVideoGenerationCostEstimate } from "../utils/videoGenerationCostEstimate.js";
 import { buildVideoCostEstimatePayload } from "../utils/buildVideoCostEstimatePayload.js";
 import { useVideoCostEstimate } from "../hooks/useVideoCostEstimate.js";
+import { useVideoPickerEntryPrices } from "../hooks/useVideoPickerEntryPrices.js";
 import VideoGenerationCostEstimate from "./VideoGenerationCostEstimate.jsx";
 import { VideoGenerationPendingCard } from "./VideoGenerationPendingCard.jsx";
 import {
@@ -52,10 +53,7 @@ import {
   isVideoPickerEntryVisibleForApiProvider,
   isVideoModelVisibleForApiProvider,
 } from "../videoGenerativeProviders.js";
-import {
-  pickerEntryGatewaySlug,
-  resolveVideoPickerUsdPriceLabel,
-} from "../utils/gatewayVideoPickerLabels.js";
+import { pickerEntryGatewaySlug } from "../utils/gatewayVideoPickerLabels.js";
 import { buildGatewayApiPickerEntry } from "../vercelGatewayVideoModels.js";
 import { getSeedanceEndpointResolution, getSeedanceToolConfiguration } from "../seedanceModels.js";
 import { getVeoToolConfiguration } from "../veoModels.js";
@@ -486,9 +484,13 @@ function ModelDropdown({
   onClose,
   copy = en,
   apiProviderId = "muapi-proxy",
+  apiKey,
+  modelKind = "t2v",
   gatewayPricingByGatewayModelId = {},
   dynamicGatewayPickerEntries = [],
   estimateDurationSeconds = 5,
+  estimateAspectRatio,
+  estimateResolution,
 }) {
   const [search, setSearch] = useState("");
   const selectedEntry = videoModelPickerEntryByVariantId.get(selectedModel);
@@ -544,6 +546,29 @@ function ModelDropdown({
   );
   const activeCategory = modelCategories.find((category) => category.id === selectedCategory) || modelCategories[0];
   const modelEntries = activeCategory.entries;
+
+  const pickerCategoryId =
+    selectedCategory === "all" ? "all" : selectedCategory;
+  const pickerModelKind =
+    selectedCategory === "i2v"
+      ? "i2v"
+      : selectedCategory === "v2v"
+        ? "v2v"
+        : modelKind;
+
+  const priceByEntryId = useVideoPickerEntryPrices({
+    apiProviderId,
+    apiKey,
+    modelKind: pickerModelKind,
+    entries: modelEntries,
+    categoryId: pickerCategoryId,
+    selectedModelId: selectedModel,
+    gatewayPricingByGatewayModelId,
+    durationSeconds: estimateDurationSeconds,
+    aspectRatio: estimateAspectRatio,
+    resolution: estimateResolution,
+    enabled: true,
+  });
 
   const activeItemRef = useRef(null);
 
@@ -637,18 +662,7 @@ function ModelDropdown({
 
   const labelForEntry = (entry) => entry.name;
 
-  const priceForEntry = (entry) => {
-    if (apiProviderId !== "vercel-ai-gateway") return null;
-    const variant =
-      (selectedModel && entry.variantsByMode
-        ? Object.values(entry.variantsByMode).find((v) => v?.model?.id === selectedModel)
-        : null) || entry.defaultVariant;
-    const slug = pickerEntryGatewaySlug(entry, selectedModel, gatewayPricingByGatewayModelId);
-    return resolveVideoPickerUsdPriceLabel(slug, gatewayPricingByGatewayModelId, {
-      modelId: variant?.model?.id,
-      durationSeconds: estimateDurationSeconds,
-    });
-  };
+  const priceForEntry = (entry) => priceByEntryId[entry.id] ?? null;
 
   const renderItem = (entry, label = labelForEntry(entry)) => {
     const { family } = entry;
@@ -3132,9 +3146,13 @@ export default function VideoStudio({
                 onClose={() => setOpenDropdown(null)}
                 copy={copy}
                 apiProviderId={apiProviderId}
+                apiKey={apiKey}
+                modelKind={costEstimateModelKind}
                 gatewayPricingByGatewayModelId={gatewayPricingByGatewayModelId}
                 dynamicGatewayPickerEntries={dynamicGatewayPickerEntries}
                 estimateDurationSeconds={selectedDuration}
+                estimateAspectRatio={selectedAr}
+                estimateResolution={selectedResolution || undefined}
               />
             </>
           }
@@ -3522,9 +3540,13 @@ export default function VideoStudio({
                       onClose={() => setOpenDropdown(null)}
                       copy={copy}
                       apiProviderId={apiProviderId}
+                      apiKey={apiKey}
+                      modelKind={costEstimateModelKind}
                       gatewayPricingByGatewayModelId={gatewayPricingByGatewayModelId}
                       dynamicGatewayPickerEntries={dynamicGatewayPickerEntries}
                       estimateDurationSeconds={selectedDuration}
+                      estimateAspectRatio={selectedAr}
+                      estimateResolution={selectedResolution || undefined}
                     />
                   </PromptPopover>
                 )}
