@@ -8,6 +8,10 @@ import {
   pickerEntryVariantModelId,
   resolveSyncVideoPickerUsdPrice,
 } from '../utils/gatewayVideoPickerLabels.js';
+import {
+  buildMuapiPickerCostEstimateParams,
+  resolvePickerEntryModelKind,
+} from '../utils/muapiVideoCostEstimateParams.js';
 
 const MUAPI_FETCH_CONCURRENCY = 4;
 const MUAPI_MAX_ENTRIES = 48;
@@ -100,22 +104,22 @@ export function useVideoPickerEntryPrices({
     const targets = entries.slice(0, MUAPI_MAX_ENTRIES);
 
     const tasks = targets.map((entry) => async () => {
-      const modelId = pickerEntryVariantModelId(entry, categoryId);
+      const entryModelKind = resolvePickerEntryModelKind(entry, categoryId, modelKind);
+      const variantCategory = categoryId === 'all' ? entryModelKind : categoryId;
+      const modelId = pickerEntryVariantModelId(entry, variantCategory);
       if (!modelId) return;
-
-      const params = {
-        model: modelId,
+      const params = buildMuapiPickerCostEstimateParams(modelId, entryModelKind, {
         duration: durationSeconds,
-        ...(aspectRatio ? { aspect_ratio: aspectRatio } : {}),
-        ...(resolution ? { resolution } : {}),
-      };
+        aspect_ratio: aspectRatio,
+        resolution,
+      });
 
       try {
         const estimate = await fetchVideoGenerationCostEstimate(
           {
             apiProviderId,
             apiKey,
-            modelKind,
+            modelKind: entryModelKind,
             params,
             enabled: true,
           },
