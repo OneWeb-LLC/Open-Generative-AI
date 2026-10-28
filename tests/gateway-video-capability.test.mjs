@@ -36,3 +36,14 @@ test('formatGatewayVideoPriceSuffix renders compact USD label', () => {
   );
   assert.equal(formatGatewayVideoPriceSuffix(null), null);
 });
+
+test('formatGatewayVideoPriceSuffix ignores language-model input for video', () => {
+  assert.equal(
+    formatGatewayVideoPriceSuffix({ input: '0.25', output: '0' }, { modelType: 'video' }),
+    null,
+  );
+  assert.equal(
+    formatGatewayVideoPriceSuffix({ input: '0.25', output: '0.05' }, { modelType: 'video' }),
+    ' · $0.05/sec',
+  );
+});
