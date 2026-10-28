@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from "react";
@@ -23,6 +24,7 @@ import {
   patchVideoHistoryEntry,
   stripNonPersistableVideoHistory,
 } from "../utils/videoGenerationJobQueue.js";
+import { createVideoGenerationConcurrencyPool } from "../utils/videoGenerationConcurrencyPool.js";
 import { formatErrorMessage } from "../utils/formatError.js";
 import { scopedPersistKey, migrateLegacyPersistKey } from "../persistKey.js";
 import DrawModal from "./DrawModal.jsx";
@@ -1021,8 +1023,7 @@ export default function VideoStudio({
   const workflowVariantPreferencesRef = useRef(new Map());
   const workflowUploadSlotRef = useRef(null);
   const workflowDraftSessionRef = useRef(0);
-  const generationQueueRef = useRef([]);
-  const generationDrainActiveRef = useRef(false);
+  const generationPoolRef = useRef(null);
   const mediaRef = useRef(null);
   mediaRef.current = {
     imageUrls: uploadedImageUrls,
@@ -1049,31 +1050,16 @@ export default function VideoStudio({
     setLocalHistory((prev) => patchVideoHistoryEntry(prev, entryId, patch));
   }, []);
 
-  const drainVideoGenerationQueue = useCallback(async () => {
-    if (generationDrainActiveRef.current) return;
-    generationDrainActiveRef.current = true;
-    while (generationQueueRef.current.length > 0) {
-      const next = generationQueueRef.current.shift();
-      if (!next) continue;
-      patchLocalHistoryEntry(next.jobId, {
-        status: VIDEO_JOB_STATUS.RUNNING,
-        startedAt: Date.now(),
-      });
-      try {
-        await next.run();
-      } catch (err) {
-        console.error("[VideoStudio] queued generation failed", err);
-      }
-    }
-    generationDrainActiveRef.current = false;
-  }, [patchLocalHistoryEntry]);
-
   const enqueueVideoGeneration = useCallback(
     (jobId, run) => {
-      generationQueueRef.current.push({ jobId, run });
-      void drainVideoGenerationQueue();
+      if (!generationPoolRef.current) {
+        generationPoolRef.current = createVideoGenerationConcurrencyPool({
+          patchLocalHistoryEntry,
+        });
+      }
+      generationPoolRef.current.enqueueVideoGeneration(jobId, run);
     },
-    [drainVideoGenerationQueue],
+    [patchLocalHistoryEntry],
   );
 
   // See ImageStudio's handleDeleteEntry: when historyItems is server-backed

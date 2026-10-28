@@ -5,6 +5,9 @@ export const VIDEO_JOB_STATUS = {
   FAILED: "failed",
 };
 
+/** Max simultaneous MuAPI / gateway video generations in Video Studio. */
+export const DEFAULT_MAX_CONCURRENT_VIDEO_JOBS = 5;
+
 export function isPendingVideoJob(entry) {
   if (!entry) return false;
   if (entry.url) return false;
@@ -13,6 +16,12 @@ export function isPendingVideoJob(entry) {
     entry.status === VIDEO_JOB_STATUS.RUNNING ||
     entry.status === VIDEO_JOB_STATUS.FAILED
   );
+}
+
+export function countRunningVideoJobs(history) {
+  return (history ?? []).filter(
+    (entry) => entry.status === VIDEO_JOB_STATUS.RUNNING,
+  ).length;
 }
 
 export function countActiveVideoJobs(history) {
@@ -24,12 +33,10 @@ export function countActiveVideoJobs(history) {
 }
 
 export function getVideoJobQueuePosition(history, entryId) {
-  const pending = (history ?? []).filter(
-    (entry) =>
-      entry.status === VIDEO_JOB_STATUS.QUEUED ||
-      entry.status === VIDEO_JOB_STATUS.RUNNING,
+  const queued = (history ?? []).filter(
+    (entry) => entry.status === VIDEO_JOB_STATUS.QUEUED,
   );
-  const index = pending.findIndex((entry) => entry.id === entryId);
+  const index = queued.findIndex((entry) => entry.id === entryId);
   return index === -1 ? 0 : index + 1;
 }
 
@@ -52,18 +59,22 @@ export function patchVideoHistoryEntry(history, entryId, patch) {
   );
 }
 
-export function promoteNextQueuedVideoJob(history) {
-  const hasRunning = (history ?? []).some(
-    (entry) => entry.status === VIDEO_JOB_STATUS.RUNNING,
-  );
-  if (hasRunning) return history;
-  const nextIdx = (history ?? []).findIndex(
-    (entry) => entry.status === VIDEO_JOB_STATUS.QUEUED,
-  );
-  if (nextIdx === -1) return history;
-  return history.map((entry, idx) =>
-    idx === nextIdx
-      ? { ...entry, status: VIDEO_JOB_STATUS.RUNNING, startedAt: Date.now() }
-      : entry,
-  );
+export function promoteNextQueuedVideoJob(
+  history,
+  maxConcurrent = DEFAULT_MAX_CONCURRENT_VIDEO_JOBS,
+) {
+  const running = countRunningVideoJobs(history);
+  if (running >= maxConcurrent) return history;
+  const slots = Math.max(0, maxConcurrent - running);
+  let promoted = 0;
+  return (history ?? []).map((entry) => {
+    if (
+      promoted < slots &&
+      entry.status === VIDEO_JOB_STATUS.QUEUED
+    ) {
+      promoted += 1;
+      return { ...entry, status: VIDEO_JOB_STATUS.RUNNING, startedAt: Date.now() };
+    }
+    return entry;
+  });
 }
