@@ -638,6 +638,20 @@ export function getDefaultVideoToolOptions(model) {
   return options;
 }
 
+/** Merge defaults, params.options, and top-level params for V2V tool fields. */
+export function collectVideoToolOptionValues(model, params = {}) {
+  const values = { ...getDefaultVideoToolOptions(model) };
+  if (params.options && typeof params.options === "object") {
+    Object.assign(values, params.options);
+  }
+  for (const { key } of getVideoToolOptionDefinitions(model)) {
+    if (params[key] !== undefined && params[key] !== null) {
+      values[key] = params[key];
+    }
+  }
+  return values;
+}
+
 export function serializeVideoToolOptions(model, values = {}) {
   const payload = {};
   for (const input of getVideoToolOptionDefinitions(model)) {
@@ -674,7 +688,7 @@ export function buildVideoToolPayload(model, params = {}) {
 
   return {
     ...payload,
-    ...serializeVideoToolOptions(model, params.options),
+    ...serializeVideoToolOptions(model, collectVideoToolOptionValues(model, params)),
   };
 }
 

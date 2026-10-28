@@ -37,7 +37,7 @@ import {
 import {
   buildSupplementalInputPayload,
   createModelParameterValues,
-  getSupplementalModelInputs,
+  getPromptSupplementalModelInputs,
 } from "../modelParameters.js";
 import {
   PROMPT_CONTROL_LABEL_CLASS,
@@ -1220,7 +1220,7 @@ export default function ImageStudio({
   const selectedModelDisplayName = selectedPickerEntry?.name || selectedFamily.name;
   const currentMode = imageMode ? "i2i" : "t2i";
   const selectedVariant = imageModelCatalog.variantById.get(selectedModelId);
-  const supplementalInputs = getSupplementalModelInputs(selectedVariant?.model);
+  const supplementalInputs = getPromptSupplementalModelInputs(selectedVariant?.model);
   const referenceVariant = getImageReferenceVariant(
     imageModelCatalog,
     selectedFamily,

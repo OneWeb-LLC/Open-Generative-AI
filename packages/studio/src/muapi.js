@@ -1,6 +1,7 @@
 import { getModelById, getVideoModelById, getI2IModelById, getI2VModelById, getV2VModelById, getRecastModelById, getLipSyncModelById, getAudioModelById, getMotionControlModelById } from './models.js';
 import {
     buildVideoToolPayload,
+    collectVideoToolOptionValues,
     serializeVideoToolOptions,
 } from './videoToolCapabilities.js';
 import { buildImageSizePayload } from './imageSizing.js';
@@ -356,7 +357,7 @@ export async function generateVideo(apiKey, params) {
     if (!mediaCapabilities.image.field && params.images_list?.length > 0) payload.images_list = params.images_list;
     if (!mediaCapabilities.video.field && params.videos_list?.length > 0) payload.videos_list = params.videos_list;
     if (!mediaCapabilities.video.field && params.video_files?.length > 0) payload.video_files = params.video_files;
-    Object.assign(payload, serializeVideoToolOptions(modelInfo, params.options));
+    Object.assign(payload, serializeVideoToolOptions(modelInfo, collectVideoToolOptionValues(modelInfo, params)));
     payload = includeRequiredArrayDefaults(modelInfo, payload);
     return submitAndPoll(endpoint, payload, apiKey, params.onRequestId, 900);
 }

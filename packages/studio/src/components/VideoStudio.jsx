@@ -81,7 +81,7 @@ import {
 import {
   buildSupplementalInputPayload,
   createModelParameterValues,
-  getSupplementalModelInputs,
+  getPromptSupplementalModelInputs,
   mergeModelParameterValues,
 } from "../modelParameters.js";
 import { getCompatibleContinuationSources, getContinuationConfig, isContinuationSourceModel } from "../videoToolCapabilities.js";
@@ -1430,7 +1430,7 @@ export default function VideoStudio({
   const currentModelCapabilities = getModelMediaCapabilities(selectedVariant?.model);
   const supplementalInputs = useMemo(
     () => {
-      const inputs = getSupplementalModelInputs(selectedVariant?.model);
+      const inputs = getPromptSupplementalModelInputs(selectedVariant?.model);
       return groupedConfiguration
         ? inputs.filter(({ key }) => key !== "omni_reference_task_type").map(({ key, schema }) => ({
             key, schema: {
@@ -3362,7 +3362,9 @@ export default function VideoStudio({
                 />
               )}
 
-              {showEndImageUpload && !uploadedEndImageUrl && (
+              {showEndImageUpload &&
+                !uploadedEndImageUrl &&
+                uploadedImageUrls.length > 0 && (
                 <ReferenceUploadButton
                   copy={copy}
                   inputRef={endImageFileInputRef}

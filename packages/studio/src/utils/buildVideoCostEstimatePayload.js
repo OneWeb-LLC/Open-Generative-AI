@@ -1,4 +1,5 @@
 import {
+  getAspectRatiosForI2VModel,
   getDurationsForI2VModel,
   getDurationsForModel,
   getResolutionsForI2VModel,

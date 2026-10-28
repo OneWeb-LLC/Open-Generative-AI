@@ -1,4 +1,5 @@
 import { getModelMediaCapabilities } from "./modelCapabilities.js";
+import { getVideoToolOptionDefinitions } from "./videoToolCapabilities.js";
 
 const COMMON_INPUT_KEYS = new Set([
   "prompt",
@@ -14,6 +15,15 @@ const COMMON_INPUT_KEYS = new Set([
   "batch_size",
 ]);
 
+/** Optional API fields kept out of the prompt-bar PARAMS chip (defaults still apply). */
+const PROMPT_HIDDEN_SUPPLEMENTAL_KEYS = new Set([
+  "seed",
+  "audio_ids",
+  "character_ids",
+  "trim_start",
+  "trim_end",
+]);
+
 function mediaInputKeys(model) {
   const capabilities = getModelMediaCapabilities(model);
   const keys = new Set();
@@ -27,12 +37,40 @@ function mediaInputKeys(model) {
   return keys;
 }
 
-export function getSupplementalModelInputs(model) {
+function getModelSchemaSupplementalInputs(model) {
   if (!model?.inputs) return [];
   const mediaKeys = mediaInputKeys(model);
   return Object.entries(model.inputs)
     .filter(([key, schema]) => (schema.configurable || !COMMON_INPUT_KEYS.has(key)) && !mediaKeys.has(key))
     .map(([key, schema]) => ({ key, schema }));
+}
+
+export function getSupplementalModelInputs(model) {
+  const toolInputs = getVideoToolOptionDefinitions(model).map(
+    ({ key, title, type, enum: enumValues, default: defaultValue, description, ...rest }) => ({
+      key,
+      schema: {
+        title,
+        type,
+        enum: enumValues,
+        default: defaultValue,
+        description,
+        configurable: true,
+        ...rest,
+      },
+    }),
+  );
+  const toolKeys = new Set(toolInputs.map((input) => input.key));
+  const schemaInputs = getModelSchemaSupplementalInputs(model).filter(
+    ({ key }) => !toolKeys.has(key),
+  );
+  return [...toolInputs, ...schemaInputs];
+}
+
+export function getPromptSupplementalModelInputs(model) {
+  return getSupplementalModelInputs(model).filter(
+    ({ key }) => !PROMPT_HIDDEN_SUPPLEMENTAL_KEYS.has(key),
+  );
 }
 
 function defaultValue(schema) {
