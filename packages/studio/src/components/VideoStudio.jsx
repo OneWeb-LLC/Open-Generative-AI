@@ -1,1 +1,1 @@
-@/tmp/Open-Generative-AI/packages/studio/src/components/VideoStudio.jsx
+/tmp/Open-Generative-AI/packages/studio/src/components/VideoStudio.jsx
