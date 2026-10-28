@@ -37,3 +37,18 @@ test('estimateConfiguredVideoCost for vercel gateway resolves slug from catalog 
   const rate = resolveConfiguredCostRate('vercel-ai-gateway', 'google/veo-3.1-generate-001');
   assert.ok(rate?.perSecondUsd);
 });
+
+test('seedance gateway models have distinct configured estimates', () => {
+  const mini = estimateConfiguredVideoCost({
+    providerId: 'vercel-ai-gateway',
+    gatewayModel: 'bytedance/seedance-2.0-mini',
+    duration: 5,
+  });
+  const full = estimateConfiguredVideoCost({
+    providerId: 'vercel-ai-gateway',
+    gatewayModel: 'bytedance/seedance-2.5',
+    duration: 5,
+  });
+  assert.ok(mini && full);
+  assert.notEqual(mini.cost, full.cost);
+});
