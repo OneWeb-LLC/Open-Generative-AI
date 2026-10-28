@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { gateway } from '@ai-sdk/gateway';
 import { getVercelVideoCatalog } from '@/lib/ogi/vercel-video-models';
-import { formatGatewayVideoPriceSuffix } from '@/lib/ogi/gateway-video-capability';
+import { buildGatewayVideoModelPriceSuffix } from '@/lib/ogi/gateway-video-pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,11 @@ function serializeGatewayVideoModels(models) {
   for (const model of models) {
     if (model.modelType !== 'video') continue;
     const pricing = model.pricing ?? null;
-    const priceSuffix = formatGatewayVideoPriceSuffix(pricing);
+    const priceSuffix = buildGatewayVideoModelPriceSuffix({
+      gatewayModel: model.id,
+      pricing,
+      durationSeconds: 5,
+    });
     gatewayVideoModels.push({
       id: model.id,
       name: model.name,
