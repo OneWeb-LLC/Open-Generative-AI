@@ -37,16 +37,29 @@ export function resolveVideoPickerUsdPriceLabel(
   pricingByGatewayModelId = {},
   options = {},
 ) {
-  const suffix = gatewaySlug ? pricingByGatewayModelId[gatewaySlug] : null;
-  if (suffix) {
-    const match = String(suffix).match(/\$[\d.]+/);
-    if (match) return match[0];
-  }
-
   const durationSeconds =
     typeof options.durationSeconds === 'number' && options.durationSeconds > 0
       ? options.durationSeconds
       : 5;
+  const suffix = gatewaySlug ? pricingByGatewayModelId[gatewaySlug] : null;
+  if (suffix) {
+    const text = String(suffix);
+    if (!/\/unit\b/.test(text)) {
+      const perSec = text.match(/\$([\d.]+)\/sec\b/);
+      if (perSec) {
+        const rate = Number(perSec[1]);
+        if (Number.isFinite(rate) && rate > 0) {
+          const total = rate * durationSeconds;
+          return total >= 0.01 ? `~$${total.toFixed(2)}` : `~$${total.toFixed(4)}`;
+        }
+      }
+      const estimateMatch = text.match(/~\$([\d.]+)/);
+      if (estimateMatch) return `~$${estimateMatch[1]}`;
+      const perMOut = text.match(/\$([\d.]+)\/M out\b/);
+      if (perMOut) return `$${perMOut[1]}/M`;
+    }
+  }
+
   const estimate = estimateConfiguredVideoCost({
     providerId: 'vercel-ai-gateway',
     modelId: options.modelId,
