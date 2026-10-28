@@ -1,1 +1,1 @@
-PLACEHOLDER_TEST
+file:///tmp/push_files_args.json
